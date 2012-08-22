@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -41,23 +42,70 @@ int main(int argc, char *argv[])
 		{"scalecolor", required_argument, 0, 's'},
 		{"origincolor", required_argument, 0, 'r'},
 		{"playercolor", required_argument, 0, 'p'},
-		{"draworigin", no_argument, 0, 'w'},
-		{"drawplayers", no_argument, 0, 'l'},
-		{"drawscale", no_argument, 0, 'c'},
-		{"drawunderground", no_argument, 0, 'u'}
+		{"draworigin", no_argument, 0, 'R'},
+		{"drawplayers", no_argument, 0, 'P'},
+		{"drawscale", no_argument, 0, 'S'},
+		{"drawunderground", no_argument, 0, 'U'}
 	};
+	string input;
+	string output;
+	string bgcolor = "#ffffff";
+	string scalecolor = "#000000";
+	string origincolor = "#ff0000";
+	string playercolor = "#ff0000";
+	bool draworigin = false;
+	bool drawplayers = false;
+	bool drawscale = false;
+	bool drawunderground = false;
+
 	int option_index = 0;
-	int c = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
-	if (c == -1) {
-		usage();
-		exit(-1);
-	}
-	std::cout << c << std::endl;
+	int c = 0;
 	while (1) {
 		c = getopt_long(argc, argv, "hi:o:", long_options, &option_index);
 		if (c == -1) {
+			if (input.empty() || output.empty()) {
+				usage();
+				exit(-1);
+			}
 			break;
 		}
-		std::cout << c << std::endl;
+		switch (c) {
+			case 'h':
+				usage();
+				exit(0);
+				break;
+			case 'i':
+				input = optarg;
+				break;
+			case 'o':
+				output = optarg;
+				break;
+			case 'b':
+				bgcolor = optarg;
+				break;
+			case 's':
+				scalecolor = optarg;
+				break;
+			case 'r':
+				origincolor = optarg;
+				break;
+			case 'p':
+				playercolor = optarg;
+				break;
+			case 'R':
+				draworigin = true;
+				break;
+			case 'P':
+				drawplayers = true;
+				break;
+			case 'S':
+				drawscale = true;
+				break;
+			case 'U':
+				drawunderground = true;
+				break;
+			default:
+				abort();
+		}
 	}
 }

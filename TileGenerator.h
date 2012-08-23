@@ -10,14 +10,24 @@
 #ifndef TILEGENERATOR_H_JJNUCARH
 #define TILEGENERATOR_H_JJNUCARH
 
+#include <map>
+#include <sqlite3.h>
 #include <stdint.h>
 #include <string>
-#include <map>
 
 struct Color {
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
+};
+
+struct BlockPos {
+	int x;
+	int y;
+	int z;
+};
+
+class DbError {
 };
 
 class TileGenerator
@@ -36,8 +46,14 @@ public:
 	void setDrawPlayers(bool drawPlayers);
 	void setDrawScale(bool drawScale);
 	void setDrawUnderground(bool drawUnderground);
-	void generate(const std::string &input, const std::string &output);
 	void parseColorsFile(const std::string &fileName);
+	void generate(const std::string &input, const std::string &output);
+
+private:
+	void openDb(const std::string &input);
+	void loadBlocks();
+	BlockPos decodeBlockPos(sqlite3_int64 blockId);
+	int unsignedToSigned(long i, long max_positive);
 
 private:
 	std::string m_bgColor;
@@ -48,6 +64,7 @@ private:
 	bool m_drawPlayers;
 	bool m_drawScale;
 	bool m_drawUnderground;
+	sqlite3 *m_db;
 	ColorMap m_colors;
 }; /* -----  end of class TileGenerator  ----- */
 

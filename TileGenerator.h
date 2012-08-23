@@ -10,6 +10,7 @@
 #ifndef TILEGENERATOR_H_JJNUCARH
 #define TILEGENERATOR_H_JJNUCARH
 
+#include <gd.h>
 #include <map>
 #include <sqlite3.h>
 #include <stdint.h>
@@ -54,6 +55,8 @@ private:
 	void loadBlocks();
 	BlockPos decodeBlockPos(sqlite3_int64 blockId);
 	int unsignedToSigned(long i, long max_positive);
+	void createImage();
+	void writeImage(const std::string &output);
 
 private:
 	std::string m_bgColor;
@@ -66,6 +69,7 @@ private:
 	bool m_drawUnderground;
 
 	sqlite3 *m_db;
+	gdImagePtr m_image;
 	int m_xMin;
 	int m_xMax;
 	int m_zMin;

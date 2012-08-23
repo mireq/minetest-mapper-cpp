@@ -10,6 +10,8 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 
 
 find_package(PkgConfig)
+include(FindPackageHandleStandardArgs)
+
 pkg_check_modules(PC_LIBSQLITE QUIET sqlite3)
 set(LIBSQLITE3_DEFINITIONS ${PC_LIBSQLITE_CFLAGS_OTHER})
 
@@ -19,7 +21,6 @@ find_library(LIBSQLITE3_LIBRARY NAMES sqlite3 libsqlite3 HINTS ${PC_LIBSQLITE_LI
 set(LIBSQLITE3_LIBRARIES ${LIBSQLITE3_LIBRARY} )
 set(LIBSQLITE3_INCLUDE_DIRS ${LIBSQLITE3_INCLUDE_DIR} )
 
-include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LibSqlite3  DEFAULT_MSG LIBSQLITE3_LIBRARY LIBSQLITE3_INCLUDE_DIR)
 
 mark_as_advanced(LIBSQLITE3_INCLUDE_DIR LIBSQLITE3_LIBRARY )
@@ -50,4 +51,5 @@ add_executable(minetest_mapper
 target_link_libraries(
 	minetest_mapper
 	${LIBSQLITE3_LIBRARIES}
+	gd
 )

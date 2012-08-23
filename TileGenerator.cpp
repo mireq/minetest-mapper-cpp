@@ -7,6 +7,7 @@
  * =====================================================================
  */
 
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -24,6 +25,7 @@ TileGenerator::TileGenerator():
 	m_drawScale(false),
 	m_drawUnderground(false),
 	m_db(0),
+	m_image(0),
 	m_xMin(0),
 	m_xMax(0),
 	m_zMin(0),
@@ -112,10 +114,12 @@ void TileGenerator::parseColorsFile(const std::string &fileName)
 	}
 }
 
-void TileGenerator::generate(const std::string &input, const std::string &/*output*/)
+void TileGenerator::generate(const std::string &input, const std::string &output)
 {
 	openDb(input);
 	loadBlocks();
+	createImage();
+	writeImage(output);
 }
 
 void TileGenerator::openDb(const std::string &input)
@@ -157,8 +161,6 @@ void TileGenerator::loadBlocks()
 				break;
 			}
 		}
-		m_imgWidth = (m_xMax - m_xMin) * 16;
-		m_imgHeight = (m_zMax - m_zMin) * 16;
 	}
 	else {
 		throw DbError();
@@ -184,5 +186,23 @@ inline int TileGenerator::unsignedToSigned(long i, long max_positive)
 	else {
 		return i - 2l * max_positive;
 	}
+}
+
+void TileGenerator::createImage()
+{
+	m_imgWidth = (m_xMax - m_xMin) * 16;
+	m_imgHeight = (m_zMax - m_zMin) * 16;
+	m_image = gdImageCreate(m_imgWidth, m_imgHeight);
+	// Background
+	gdImageColorAllocate(m_image, 255, 255, 255);
+}
+
+void TileGenerator::writeImage(const std::string &output)
+{
+	FILE *out;
+	out = fopen(output.c_str(), "w");
+	gdImagePng(m_image, out);
+	fclose(out);
+	gdImageDestroy(m_image);
 }
 

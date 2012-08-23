@@ -64,8 +64,20 @@ private:
 	bool m_drawPlayers;
 	bool m_drawScale;
 	bool m_drawUnderground;
+
 	sqlite3 *m_db;
+	int m_xMin;
+	int m_xMax;
+	int m_zMin;
+	int m_zMax;
+	int m_imgWidth;
+	int m_imgHeight;
 	ColorMap m_colors;
+
+	static const int SectorXMin = -1500/16;
+	static const int SectorXMax = 1500/16;
+	static const int SectorZMin = -1500/16;
+	static const int SectorZMax = 1500/16;
 }; /* -----  end of class TileGenerator  ----- */
 
 #endif /* end of include guard: TILEGENERATOR_H_JJNUCARH */

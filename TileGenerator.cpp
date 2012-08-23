@@ -23,7 +23,11 @@ TileGenerator::TileGenerator():
 	m_drawPlayers(false),
 	m_drawScale(false),
 	m_drawUnderground(false),
-	m_db(0)
+	m_db(0),
+	m_xMin(0),
+	m_xMax(0),
+	m_zMin(0),
+	m_zMax(0)
 {
 }
 
@@ -127,18 +131,34 @@ void TileGenerator::loadBlocks()
 	sqlite3_stmt *statement;
 	string sql = "SELECT pos FROM blocks";
 	if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &statement, 0) == SQLITE_OK) {
-		//int cols = sqlite3_column_count(statement);
 		int result = 0;
 		while (true) {
 			result = sqlite3_step(statement);
 			if(result == SQLITE_ROW) {
 				sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
-				decodeBlockPos(blocknum);
+				BlockPos pos = decodeBlockPos(blocknum);
+				if (pos.x > SectorXMax || pos.x < SectorXMin || pos.z > SectorZMax || pos.z < SectorZMin) {
+					continue;
+				}
+				if (pos.x < m_xMin) {
+					m_xMin = pos.x;
+				}
+				if (pos.x > m_xMax) {
+					m_xMax = pos.x;
+				}
+				if (pos.z < m_zMin) {
+					m_zMin = pos.z;
+				}
+				if (pos.z > m_zMax) {
+					m_zMax = pos.z;
+				}
 			}
 			else {
 				break;
 			}
 		}
+		m_imgWidth = (m_xMax - m_xMin) * 16;
+		m_imgHeight = (m_zMax - m_zMin) * 16;
 	}
 	else {
 		throw DbError();
@@ -149,9 +169,9 @@ inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId)
 {
 	BlockPos pos;
 	pos.x = unsignedToSigned(blockId % 4096, 2048);
-	blockId = blockId / 4096;
+	blockId = (blockId - pos.x) / 4096;
 	pos.y = unsignedToSigned(blockId % 4096, 2048);
-	blockId = blockId / 4096;
+	blockId = (blockId - pos.y) / 4096;
 	pos.z = unsignedToSigned(blockId % 4096, 2048);
 	return pos;
 }

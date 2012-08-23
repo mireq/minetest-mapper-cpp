@@ -14,6 +14,7 @@
 #include <map>
 #include <stdint.h>
 #include <string>
+#include "TileGenerator.h"
 
 using namespace std;
 
@@ -95,17 +96,11 @@ int main(int argc, char *argv[])
 		{"drawscale", no_argument, 0, 'S'},
 		{"drawunderground", no_argument, 0, 'U'}
 	};
+
 	string input;
 	string output;
-	string bgcolor = "#ffffff";
-	string scalecolor = "#000000";
-	string origincolor = "#ff0000";
-	string playercolor = "#ff0000";
-	bool draworigin = false;
-	bool drawplayers = false;
-	bool drawscale = false;
-	bool drawunderground = false;
 
+	TileGenerator generator;
 	int option_index = 0;
 	int c = 0;
 	while (1) {
@@ -129,28 +124,28 @@ int main(int argc, char *argv[])
 				output = optarg;
 				break;
 			case 'b':
-				bgcolor = optarg;
+				generator.setBgColor(optarg);
 				break;
 			case 's':
-				scalecolor = optarg;
+				generator.setScaleColor(optarg);
 				break;
 			case 'r':
-				origincolor = optarg;
+				generator.setOriginColor(optarg);
 				break;
 			case 'p':
-				playercolor = optarg;
+				generator.setPlayerColor(optarg);
 				break;
 			case 'R':
-				draworigin = true;
+				generator.setDrawOrigin(true);
 				break;
 			case 'P':
-				drawplayers = true;
+				generator.setDrawPlayers(true);
 				break;
 			case 'S':
-				drawscale = true;
+				generator.setDrawScale(true);
 				break;
 			case 'U':
-				drawunderground = true;
+				generator.setDrawScale(true);
 				break;
 			default:
 				abort();

@@ -28,10 +28,12 @@ include_directories(
 )
 
 set(mapper_HDRS
+	TileGenerator.h
 )
 
 set(mapper_SRCS
 	mapper.cpp
+	TileGenerator.cpp
 )
 
 add_executable(minetest_mapper

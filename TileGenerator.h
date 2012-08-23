@@ -31,6 +31,9 @@ struct BlockPos {
 class DbError {
 };
 
+class ColorError {
+};
+
 class TileGenerator
 {
 private:
@@ -43,6 +46,7 @@ public:
 	void setScaleColor(const std::string &scaleColor);
 	void setOriginColor(const std::string &originColor);
 	void setPlayerColor(const std::string &playerColor);
+	Color parseColor(const std::string &color);
 	void setDrawOrigin(bool drawOrigin);
 	void setDrawPlayers(bool drawPlayers);
 	void setDrawScale(bool drawScale);
@@ -59,10 +63,10 @@ private:
 	void writeImage(const std::string &output);
 
 private:
-	std::string m_bgColor;
-	std::string m_scaleColor;
-	std::string m_originColor;
-	std::string m_playerColor;
+	Color m_bgColor;
+	Color m_scaleColor;
+	Color m_originColor;
+	Color m_playerColor;
 	bool m_drawOrigin;
 	bool m_drawPlayers;
 	bool m_drawScale;

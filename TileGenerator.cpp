@@ -16,10 +16,6 @@
 using namespace std;
 
 TileGenerator::TileGenerator():
-	m_bgColor("#ffffff"),
-	m_scaleColor("#000000"),
-	m_originColor("#ff0000"),
-	m_playerColor("#ff0000"),
 	m_drawOrigin(false),
 	m_drawPlayers(false),
 	m_drawScale(false),
@@ -31,6 +27,10 @@ TileGenerator::TileGenerator():
 	m_zMin(0),
 	m_zMax(0)
 {
+	m_bgColor = {255, 255, 255};
+	m_scaleColor = {0, 0, 0};
+	m_originColor = {255, 0, 0};
+	m_playerColor = {255, 0, 0};
 }
 
 TileGenerator::~TileGenerator()
@@ -43,22 +43,40 @@ TileGenerator::~TileGenerator()
 
 void TileGenerator::setBgColor(const std::string &bgColor)
 {
-	m_bgColor = bgColor;
+	m_bgColor = parseColor(bgColor);
 }
 
 void TileGenerator::setScaleColor(const std::string &scaleColor)
 {
-	m_scaleColor = scaleColor;
+	m_scaleColor = parseColor(scaleColor);
 }
 
 void TileGenerator::setOriginColor(const std::string &originColor)
 {
-	m_originColor = originColor;
+	m_originColor = parseColor(originColor);
 }
 
 void TileGenerator::setPlayerColor(const std::string &playerColor)
 {
-	m_playerColor = playerColor;
+	m_playerColor = parseColor(playerColor);
+}
+
+Color TileGenerator::parseColor(const std::string &color)
+{
+	Color parsed;
+	if (color.length() != 7) {
+		throw ColorError();
+	}
+	if (color[0] != '#') {
+		throw ColorError();
+	}
+	long col = strtol(color.c_str() + 1, NULL, 16);
+	parsed.b = col % 256;
+	col = col / 256;
+	parsed.g = col % 256;
+	col = col / 256;
+	parsed.r = col % 256;
+	return parsed;
 }
 
 void TileGenerator::setDrawOrigin(bool drawOrigin)
@@ -194,7 +212,7 @@ void TileGenerator::createImage()
 	m_imgHeight = (m_zMax - m_zMin) * 16;
 	m_image = gdImageCreate(m_imgWidth, m_imgHeight);
 	// Background
-	gdImageColorAllocate(m_image, 255, 255, 255);
+	gdImageColorAllocate(m_image, m_bgColor.r, m_bgColor.g, m_bgColor.b);
 }
 
 void TileGenerator::writeImage(const std::string &output)

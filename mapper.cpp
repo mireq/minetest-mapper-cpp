@@ -23,9 +23,11 @@ struct Color {
 	uint8_t b;
 };
 
-map<string, Color> parse_colors()
+typedef map<string, Color> ColorMap;
+
+ColorMap parse_colors()
 {
-	map<string, Color> parsed;
+	ColorMap parsed;
 
 	ifstream in;
 	in.open("colors.txt", ifstream::in);
@@ -155,5 +157,5 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	map<string, Color> colors = parse_colors();
+	ColorMap colors = parse_colors();
 }

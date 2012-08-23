@@ -137,6 +137,7 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 	openDb(input);
 	loadBlocks();
 	createImage();
+	renderMap();
 	writeImage(output);
 }
 
@@ -174,11 +175,14 @@ void TileGenerator::loadBlocks()
 				if (pos.z > m_zMax) {
 					m_zMax = pos.z;
 				}
+				m_positions.push_back(std::pair<int, int>(pos.x, pos.z));
 			}
 			else {
 				break;
 			}
 		}
+		m_positions.sort();
+		m_positions.unique();
 	}
 	else {
 		throw DbError();
@@ -194,6 +198,11 @@ inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId)
 	blockId = (blockId - pos.y) / 4096;
 	pos.z = unsignedToSigned(blockId % 4096, 2048);
 	return pos;
+}
+
+inline sqlite3_int64 TileGenerator::encodeBlockPos(int x, int y, int z)
+{
+	return sqlite3_int64(z) * 16777216l + sqlite3_int64(y) * 4096l + sqlite3_int64(x);
 }
 
 inline int TileGenerator::unsignedToSigned(long i, long max_positive)
@@ -213,6 +222,35 @@ void TileGenerator::createImage()
 	m_image = gdImageCreate(m_imgWidth, m_imgHeight);
 	// Background
 	gdImageColorAllocate(m_image, m_bgColor.r, m_bgColor.g, m_bgColor.b);
+}
+
+void TileGenerator::renderMap()
+{
+	sqlite3_stmt *statement;
+	string sql = "SELECT pos FROM blocks WHERE pos >= ? AND pos <= ? AND (pos - ?) % 4096 = 0";
+	if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &statement, 0) != SQLITE_OK) {
+		throw DbError();
+	}
+
+	for (auto position = m_positions.begin(); position != m_positions.end(); ++position) {
+		int xPos = position->first;
+		int zPos = position->second;
+
+		sqlite3_int64 psMin = encodeBlockPos(xPos, -2048, zPos);
+		sqlite3_int64 psMax = encodeBlockPos(xPos, 2047, zPos);
+		sqlite3_bind_int64(statement, 1, psMin);
+		sqlite3_bind_int64(statement, 2, psMax);
+		sqlite3_bind_int64(statement, 3, psMin);
+		int result = 0;
+		while (true) {
+			result = sqlite3_step(statement);
+			if(result == SQLITE_ROW) {
+			}
+			else {
+				break;
+			}
+		}
+	}
 }
 
 void TileGenerator::writeImage(const std::string &output)

@@ -11,6 +11,7 @@
 #define TILEGENERATOR_H_JJNUCARH
 
 #include <gd.h>
+#include <list>
 #include <map>
 #include <sqlite3.h>
 #include <stdint.h>
@@ -58,8 +59,10 @@ private:
 	void openDb(const std::string &input);
 	void loadBlocks();
 	BlockPos decodeBlockPos(sqlite3_int64 blockId);
+	sqlite3_int64 encodeBlockPos(int x, int y, int z);
 	int unsignedToSigned(long i, long max_positive);
 	void createImage();
+	void renderMap();
 	void writeImage(const std::string &output);
 
 private:
@@ -80,6 +83,7 @@ private:
 	int m_zMax;
 	int m_imgWidth;
 	int m_imgHeight;
+	std::list<std::pair<int, int> > m_positions;
 	ColorMap m_colors;
 
 	static const int SectorXMin = -1500/16;

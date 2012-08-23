@@ -7,12 +7,58 @@
  * =====================================================================
  */
 
-#include <getopt.h>
 #include <cstdlib>
+#include <fstream>
+#include <getopt.h>
 #include <iostream>
+#include <map>
+#include <stdint.h>
 #include <string>
 
 using namespace std;
+
+struct Color {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+};
+
+map<string, Color> parse_colors()
+{
+	map<string, Color> parsed;
+
+	ifstream in;
+	in.open("colors.txt", ifstream::in);
+	if (!in.is_open()) {
+		std::cerr << "File colors.txt does not exist" << std::endl;
+		exit(-2);
+	}
+
+	while (in.good()) {
+		string name;
+		Color color;
+		in >> name;
+		if (name[0] == '#') {
+			in.ignore(65536, '\n');
+			in >> name;
+		}
+		while (name == "\n" && in.good()) {
+			in >> name;
+		}
+		int r, g, b;
+		in >> r;
+		in >> g;
+		in >> b;
+		if (in.good()) {
+			parsed[name] = color;
+			color.r = r;
+			color.g = g;
+			color.b = b;
+		}
+	}
+
+	return parsed;
+}
 
 void usage()
 {
@@ -108,4 +154,6 @@ int main(int argc, char *argv[])
 				abort();
 		}
 	}
+
+	map<string, Color> colors = parse_colors();
 }

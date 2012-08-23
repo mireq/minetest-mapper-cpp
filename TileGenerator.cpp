@@ -7,7 +7,12 @@
  * =====================================================================
  */
 
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include "TileGenerator.h"
+
+using namespace std;
 
 TileGenerator::TileGenerator():
 	m_bgColor("#ffffff"),
@@ -68,5 +73,38 @@ void TileGenerator::setDrawUnderground(bool drawUnderground)
 
 void TileGenerator::generate(const std::string &/*input*/, const std::string &/*output*/)
 {
+}
+
+void TileGenerator::parseColorsFile(const std::string &fileName)
+{
+	ifstream in;
+	in.open(fileName.c_str(), ifstream::in);
+	if (!in.is_open()) {
+		std::cerr << "File colors.txt does not exist" << std::endl;
+		exit(-2);
+	}
+
+	while (in.good()) {
+		string name;
+		Color color;
+		in >> name;
+		if (name[0] == '#') {
+			in.ignore(65536, '\n');
+			in >> name;
+		}
+		while (name == "\n" && in.good()) {
+			in >> name;
+		}
+		int r, g, b;
+		in >> r;
+		in >> g;
+		in >> b;
+		if (in.good()) {
+			m_colors[name] = color;
+			color.r = r;
+			color.g = g;
+			color.b = b;
+		}
+	}
 }
 

@@ -8,60 +8,13 @@
  */
 
 #include <cstdlib>
-#include <fstream>
 #include <getopt.h>
 #include <iostream>
 #include <map>
-#include <stdint.h>
 #include <string>
 #include "TileGenerator.h"
 
 using namespace std;
-
-struct Color {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-};
-
-typedef map<string, Color> ColorMap;
-
-ColorMap parse_colors()
-{
-	ColorMap parsed;
-
-	ifstream in;
-	in.open("colors.txt", ifstream::in);
-	if (!in.is_open()) {
-		std::cerr << "File colors.txt does not exist" << std::endl;
-		exit(-2);
-	}
-
-	while (in.good()) {
-		string name;
-		Color color;
-		in >> name;
-		if (name[0] == '#') {
-			in.ignore(65536, '\n');
-			in >> name;
-		}
-		while (name == "\n" && in.good()) {
-			in >> name;
-		}
-		int r, g, b;
-		in >> r;
-		in >> g;
-		in >> b;
-		if (in.good()) {
-			parsed[name] = color;
-			color.r = r;
-			color.g = g;
-			color.b = b;
-		}
-	}
-
-	return parsed;
-}
 
 void usage()
 {
@@ -101,6 +54,7 @@ int main(int argc, char *argv[])
 	string output;
 
 	TileGenerator generator;
+	generator.parseColorsFile("colors.txt");
 	int option_index = 0;
 	int c = 0;
 	while (1) {
@@ -151,6 +105,4 @@ int main(int argc, char *argv[])
 				abort();
 		}
 	}
-
-	ColorMap colors = parse_colors();
 }

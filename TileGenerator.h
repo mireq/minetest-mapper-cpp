@@ -10,10 +10,21 @@
 #ifndef TILEGENERATOR_H_JJNUCARH
 #define TILEGENERATOR_H_JJNUCARH
 
+#include <stdint.h>
 #include <string>
+#include <map>
+
+struct Color {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+};
 
 class TileGenerator
 {
+private:
+	typedef std::map<std::string, Color> ColorMap;
+
 public:
 	TileGenerator();
 	~TileGenerator();
@@ -26,6 +37,7 @@ public:
 	void setDrawScale(bool drawScale);
 	void setDrawUnderground(bool drawUnderground);
 	void generate(const std::string &input, const std::string &output);
+	void parseColorsFile(const std::string &fileName);
 
 private:
 	std::string m_bgColor;
@@ -36,6 +48,7 @@ private:
 	bool m_drawPlayers;
 	bool m_drawScale;
 	bool m_drawUnderground;
+	ColorMap m_colors;
 }; /* -----  end of class TileGenerator  ----- */
 
 #endif /* end of include guard: TILEGENERATOR_H_JJNUCARH */

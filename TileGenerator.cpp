@@ -309,6 +309,14 @@ void TileGenerator::renderMap()
 						m_nameMap[nodeId] = string(data + dataOffset, nameLen);
 					}
 				}
+
+				// Node timers
+				if (version >= 25) {
+					dataOffset++;
+					int numTimers = readU16(data + dataOffset);
+					dataOffset += 2;
+					dataOffset += numTimers * 10;
+				}
 			}
 		}
 	}

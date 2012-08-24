@@ -266,7 +266,9 @@ void TileGenerator::renderMap()
 				string mapData = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
 				dataOffset += processed;
 				string mapMetadata = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
+				dataOffset += processed;
 
+				// Skip unused data
 				if (version <= 21) {
 					dataOffset += 2;
 				}
@@ -274,11 +276,37 @@ void TileGenerator::renderMap()
 					dataOffset += 1;
 				}
 				if (version == 24) {
-					uint8_t ver = data[dataOffset + 1];
-					dataOffset++;
+					uint8_t ver = data[dataOffset++];
 					if (ver == 1) {
-						int num = int(data[dataOffset + 1]) * 256 + data[dataOffset + 2];
-						dataOffset += 10 * num + 2;
+						int num = readU16(data + dataOffset);
+						dataOffset += 2;
+						dataOffset += 10 * num;
+					}
+				}
+
+				// Skip unused static objects
+				dataOffset++; // Skip static object version
+				int staticObjectCount = readU16(data + dataOffset);
+				dataOffset += 2;
+				for (int i = 0; i < staticObjectCount; ++i) {
+					dataOffset += 13;
+					int dataSize = readU16(data + dataOffset);
+					dataOffset += dataSize + 2;
+				}
+				dataOffset += 4; // Skip timestamp
+
+				// Read mapping
+				if (version >= 22) {
+					dataOffset++; // mapping version
+					int numMappings = readU16(data + dataOffset);
+					dataOffset += 2;
+					for (int i = 0; i < numMappings; ++i) {
+						int nodeId = readU16(data + dataOffset);
+						dataOffset += 2;
+						int nameLen = readU16(data + dataOffset);
+						dataOffset += 2;
+						dataOffset += nameLen;
+						m_nameMap[nodeId] = string(data + dataOffset, nameLen);
 					}
 				}
 			}
@@ -371,5 +399,10 @@ inline std::string TileGenerator::zlibDecompress(const char *data, std::size_t s
 	(void)inflateEnd(&strm);
 
 	return buffer;
+}
+
+inline int TileGenerator::readU16(const char *data)
+{
+	return int(data[0]) * 256 + data[1];
 }
 

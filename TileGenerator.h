@@ -95,6 +95,7 @@ private:
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void writeImage(const std::string &output);
 	inline std::string zlibDecompress(const char *data, std::size_t size, std::size_t *processed) const;
+	inline int readU16(const char *data);
 
 private:
 	Color m_bgColor;
@@ -115,6 +116,7 @@ private:
 	int m_imgWidth;
 	int m_imgHeight;
 	std::list<std::pair<int, int> > m_positions;
+	std::map<int, std::string> m_nameMap;
 	ColorMap m_colors;
 
 	static const int SectorXMin = -1500/16;

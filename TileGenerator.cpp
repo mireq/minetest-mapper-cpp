@@ -263,7 +263,24 @@ void TileGenerator::renderMap()
 					dataOffset = 2;
 				}
 				size_t processed;
-				zlibDecompress(data + dataOffset, length - dataOffset, &processed);
+				string mapData = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
+				dataOffset += processed;
+				string mapMetadata = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
+
+				if (version <= 21) {
+					dataOffset += 2;
+				}
+				if (version == 23) {
+					dataOffset += 1;
+				}
+				if (version == 24) {
+					uint8_t ver = data[dataOffset + 1];
+					dataOffset++;
+					if (ver == 1) {
+						int num = int(data[dataOffset + 1]) * 256 + data[dataOffset + 2];
+						dataOffset += 10 * num + 2;
+					}
+				}
 			}
 		}
 	}

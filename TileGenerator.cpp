@@ -227,20 +227,25 @@ void TileGenerator::createImage()
 void TileGenerator::renderMap()
 {
 	sqlite3_stmt *statement;
-	string sql = "SELECT pos FROM blocks WHERE pos >= ? AND pos <= ? AND (pos - ?) % 4096 = 0";
+	//string sql = "SELECT pos, data FROM blocks WHERE pos >= ? AND pos <= ? AND (pos - ?) % 4096 = 0";
+	string sql = "SELECT pos, data FROM blocks WHERE pos >= ? AND pos <= ?";
+	std::list<int> zlist;
+	for (std::list<std::pair<int, int> >::iterator position = m_positions.begin(); position != m_positions.end(); ++position) {
+		zlist.push_back(position->second);
+	}
+	zlist.sort();
+	zlist.unique();
 	if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &statement, 0) != SQLITE_OK) {
 		throw DbError();
 	}
 
-	for (auto position = m_positions.begin(); position != m_positions.end(); ++position) {
-		int xPos = position->first;
-		int zPos = position->second;
+	for (std::list<int>::iterator position = zlist.begin(); position != zlist.end(); ++position) {
+		int zPos = *position;
 
-		sqlite3_int64 psMin = encodeBlockPos(xPos, -2048, zPos);
-		sqlite3_int64 psMax = encodeBlockPos(xPos, 2047, zPos);
+		sqlite3_int64 psMin = encodeBlockPos(-2048, -2048, zPos);
+		sqlite3_int64 psMax = encodeBlockPos( 2047,  2047, zPos);
 		sqlite3_bind_int64(statement, 1, psMin);
 		sqlite3_bind_int64(statement, 2, psMax);
-		sqlite3_bind_int64(statement, 3, psMin);
 		int result = 0;
 		while (true) {
 			result = sqlite3_step(statement);

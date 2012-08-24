@@ -62,6 +62,9 @@ class ColorError {
 class DecompressError {
 };
 
+class VersionError {
+};
+
 class TileGenerator
 {
 private:
@@ -93,9 +96,12 @@ private:
 	void renderMap();
 	std::list<int> getZValueList() const;
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
+	void renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version);
+	int readBlockContent(const unsigned char *mapData, int version, int datapos);
 	void writeImage(const std::string &output);
 	inline std::string zlibDecompress(const char *data, std::size_t size, std::size_t *processed) const;
-	inline int readU16(const char *data);
+	int readU16(const char *data);
+	int rgb2int(uint8_t r, uint8_t g, uint8_t b);
 
 private:
 	Color m_bgColor;
@@ -118,6 +124,10 @@ private:
 	std::list<std::pair<int, int> > m_positions;
 	std::map<int, std::string> m_nameMap;
 	ColorMap m_colors;
+	uint16_t m_readedPixels[16];
+
+	int m_blockAirId;
+	int m_blockIgnoreId;
 
 	static const int SectorXMin = -1500/16;
 	static const int SectorXMax = 1500/16;

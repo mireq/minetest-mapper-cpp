@@ -127,10 +127,10 @@ void TileGenerator::parseColorsFile(const std::string &fileName)
 		in >> g;
 		in >> b;
 		if (in.good()) {
-			m_colors[name] = color;
 			color.r = r;
 			color.g = g;
 			color.b = b;
+			m_colors[name] = color;
 		}
 	}
 }
@@ -220,11 +220,11 @@ inline int TileGenerator::unsignedToSigned(long i, long max_positive) const
 
 void TileGenerator::createImage()
 {
-	m_imgWidth = (m_xMax - m_xMin) * 16;
-	m_imgHeight = (m_zMax - m_zMin) * 16;
-	m_image = gdImageCreate(m_imgWidth, m_imgHeight);
+	m_imgWidth = (m_xMax - m_xMin + 1) * 16;
+	m_imgHeight = (m_zMax - m_zMin + 1) * 16;
+	m_image = gdImageCreateTrueColor(m_imgWidth, m_imgHeight);
 	// Background
-	gdImageColorAllocate(m_image, m_bgColor.r, m_bgColor.g, m_bgColor.b);
+	gdImageFilledRectangle(m_image, 0, 0, m_imgWidth - 1, m_imgHeight -1, rgb2int(m_bgColor.r, m_bgColor.g, m_bgColor.b));
 }
 
 void TileGenerator::renderMap()
@@ -244,11 +244,15 @@ void TileGenerator::renderMap()
 				continue;
 			}
 
+			for (int i = 0; i < 16; ++i) {
+				m_readedPixels[i] = 0;
+			}
+
 			int xPos = position->first;
 			blocks[xPos].sort();
 			const BlockList &blockStack = blocks[xPos];
 			for (BlockList::const_iterator it = blockStack.begin(); it != blockStack.end(); ++it) {
-				//const BlockPos &pos = it->first;
+				const BlockPos &pos = it->first;
 				const char *data = it->second.c_str();
 				size_t length = it->second.length();
 
@@ -295,6 +299,8 @@ void TileGenerator::renderMap()
 				}
 				dataOffset += 4; // Skip timestamp
 
+				m_blockAirId = -1;
+				m_blockIgnoreId = -1;
 				// Read mapping
 				if (version >= 22) {
 					dataOffset++; // mapping version
@@ -305,8 +311,17 @@ void TileGenerator::renderMap()
 						dataOffset += 2;
 						int nameLen = readU16(data + dataOffset);
 						dataOffset += 2;
+						string name = string(data + dataOffset, nameLen);
+						if (name == "air") {
+							m_blockAirId = nodeId;
+						}
+						else if (name == "ignore") {
+							m_blockIgnoreId = nodeId;
+						}
+						else {
+							m_nameMap[nodeId] = name;
+						}
 						dataOffset += nameLen;
-						m_nameMap[nodeId] = string(data + dataOffset, nameLen);
 					}
 				}
 
@@ -317,8 +332,73 @@ void TileGenerator::renderMap()
 					dataOffset += 2;
 					dataOffset += numTimers * 10;
 				}
+
+				renderMapBlock(mapData, pos, version);
+
+				bool allReaded = true;
+				for (int i = 0; i < 16; ++i) {
+					if (m_readedPixels[i] != 0xffff) {
+						allReaded = false;
+					}
+				}
+				if (allReaded) {
+					break;
+				}
 			}
 		}
+	}
+}
+
+inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version)
+{
+	int xBegin = (pos.x - m_xMin) * 16;
+	int zBegin = (m_zMax - pos.z) * 16;
+	const unsigned char *mapData = reinterpret_cast<const unsigned char *>(mapBlock.c_str());
+	for (int z = 0; z < 16; ++z) {
+		int imageY = zBegin + 16 - z;
+		for (int x = 0; x < 16; ++x) {
+			if (m_readedPixels[z] & (1 << x)) {
+				continue;
+			}
+			int imageX = xBegin + x;
+			for (int y = 15; y >= 0; --y) {
+				int position = x + (y << 4) + (z << 8);
+				int content = readBlockContent(mapData, version, position);
+				if (content == m_blockIgnoreId || content == m_blockAirId) {
+					continue;
+				}
+				std::map<int, std::string>::iterator blockName = m_nameMap.find(content);
+				if (blockName != m_nameMap.end()) {
+					const string &name = blockName->second;
+					ColorMap::const_iterator color = m_colors.find(name);
+					if (color != m_colors.end()) {
+						const Color &c = color->second;
+						m_image->tpixels[imageY][imageX] = rgb2int(c.r, c.g, c.b);
+						m_readedPixels[z] |= (1 << x);
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+inline int TileGenerator::readBlockContent(const unsigned char *mapData, int version, int datapos)
+{
+	if (version >= 24) {
+		size_t index = datapos << 1;
+		return (mapData[index] << 8) | mapData[index + 1];
+	}
+	else if (version >= 20) {
+		if (mapData[datapos] <= 0x80) {
+			return mapData[datapos];
+		}
+		else {
+			return (int(mapData[datapos]) << 4) | (int(mapData[datapos + 0x2000]) >> 4);
+		}
+	}
+	else {
+		throw VersionError();
 	}
 }
 
@@ -337,16 +417,14 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 {
 	map<int, BlockList> blocks;
 
-	sqlite3_int64 psMin = encodeBlockPos(-2048, -2048, zPos);
-	sqlite3_int64 psMax = encodeBlockPos( 2047,  2047, zPos);
-	std::stringstream minStream;
-	std::stringstream maxStream;
-	minStream << psMin;
-	maxStream << psMax;
-	string minStr = minStream.str();
-	string maxStr = maxStream.str();
-	sqlite3_bind_text(statement, 1, minStr.c_str(), -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(statement, 2, maxStr.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_int64 psMin;
+	sqlite3_int64 psMax;
+
+	psMin = (static_cast<sqlite3_int64>(zPos) * 16777216l) - 0x800000;
+	psMax = (static_cast<sqlite3_int64>(zPos) * 16777216l) + 0x7fffff;
+
+	sqlite3_bind_int64(statement, 1, psMin);
+	sqlite3_bind_int64(statement, 2, psMax);
 	int result = 0;
 	while (true) {
 		result = sqlite3_step(statement);
@@ -412,5 +490,10 @@ inline std::string TileGenerator::zlibDecompress(const char *data, std::size_t s
 inline int TileGenerator::readU16(const char *data)
 {
 	return int(data[0]) * 256 + data[1];
+}
+
+inline int TileGenerator::rgb2int(uint8_t r, uint8_t g, uint8_t b)
+{
+	return (r << 16) + (g << 8) + b;
 }
 

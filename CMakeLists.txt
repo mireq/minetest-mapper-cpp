@@ -52,4 +52,5 @@ target_link_libraries(
 	minetest_mapper
 	${LIBSQLITE3_LIBRARIES}
 	gd
+	z
 )

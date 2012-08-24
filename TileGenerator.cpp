@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <zlib.h>
 #include "TileGenerator.h"
 
 using namespace std;
@@ -247,9 +248,23 @@ void TileGenerator::renderMap()
 			blocks[xPos].sort();
 			const BlockList &blockStack = blocks[xPos];
 			for (BlockList::const_iterator it = blockStack.begin(); it != blockStack.end(); ++it) {
-				std::cout << it->first.y << std::endl;
+				//const BlockPos &pos = it->first;
+				const char *data = it->second.c_str();
+				size_t length = it->second.length();
+
+				uint8_t version = data[0];
+				//uint8_t flags = data[1];
+
+				size_t dataOffset = 0;
+				if (version >= 22) {
+					dataOffset = 4;
+				}
+				else {
+					dataOffset = 2;
+				}
+				size_t processed;
+				zlibDecompress(data + dataOffset, length - dataOffset, &processed);
 			}
-			std::cout << "---" << std::endl;
 		}
 	}
 }
@@ -305,5 +320,39 @@ void TileGenerator::writeImage(const std::string &output)
 	gdImagePng(m_image, out);
 	fclose(out);
 	gdImageDestroy(m_image);
+}
+
+inline std::string TileGenerator::zlibDecompress(const char *data, std::size_t size, std::size_t *processed) const
+{
+	string buffer;
+	const size_t BUFSIZE = 128 * 1024;
+	uint8_t temp_buffer[BUFSIZE];
+
+	z_stream strm;
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.next_in = Z_NULL;
+	strm.avail_in = size;
+
+	if (inflateInit(&strm) != Z_OK) {
+		throw DecompressError();
+	}
+
+	strm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+	int ret = 0;
+	do {
+		strm.avail_out = BUFSIZE;
+		strm.next_out = temp_buffer;
+		ret = inflate(&strm, Z_NO_FLUSH);
+		buffer += string(reinterpret_cast<char *>(temp_buffer), BUFSIZE - strm.avail_out);
+	} while (ret == Z_OK);
+	if (ret != Z_STREAM_END) {
+		throw DecompressError();
+	}
+	*processed = (const char *)strm.next_in - (const char *)data;
+	(void)inflateEnd(&strm);
+
+	return buffer;
 }
 

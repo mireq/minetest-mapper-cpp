@@ -94,7 +94,7 @@ private:
 	std::list<int> getZValueList() const;
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void writeImage(const std::string &output);
-	void *zlibDecompress(const void *data, std::size_t *processed) const;
+	inline std::string zlibDecompress(const char *data, std::size_t size, std::size_t *processed) const;
 
 private:
 	Color m_bgColor;

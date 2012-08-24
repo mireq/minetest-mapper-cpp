@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include "TileGenerator.h"
 
 using namespace std;
@@ -251,9 +252,9 @@ inline std::list<int> TileGenerator::getZValueList() const
 	return zlist;
 }
 
-void TileGenerator::getBlocksOnZ(int zPos, sqlite3_stmt *statement) const
+std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sqlite3_stmt *statement) const
 {
-	map <int, list <pair <BlockPos, string> > > blocks;
+	map<int, BlockList> blocks;
 
 	sqlite3_int64 psMin = encodeBlockPos(-2048, -2048, zPos);
 	sqlite3_int64 psMax = encodeBlockPos( 2047,  2047, zPos);
@@ -270,27 +271,18 @@ void TileGenerator::getBlocksOnZ(int zPos, sqlite3_stmt *statement) const
 		result = sqlite3_step(statement);
 		if(result == SQLITE_ROW) {
 			sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
-			const void *data = sqlite3_column_blob(statement, 1);
-
-			uint8_t version = static_cast<const uint8_t *>(data)[0];
-			uint8_t flags = static_cast<const uint8_t *>(data)[1];
-			if (version >= 22) {
-				data += 4;
-			}
-			else {
-				data += 2;
-			}
-
-
+			const char *data = reinterpret_cast<const char *>(sqlite3_column_blob(statement, 1));
+			int size = sqlite3_column_bytes(statement, 1);
 			BlockPos pos = decodeBlockPos(blocknum);
-			blocks[pos.x].push_back(pair<BlockPos, string> (pos, ""));
-
+			blocks[pos.x].push_back(Block(pos, string(data, size)));
 		}
 		else {
 			break;
 		}
 	}
 	sqlite3_reset(statement);
+
+	return blocks;
 }
 
 void TileGenerator::writeImage(const std::string &output)

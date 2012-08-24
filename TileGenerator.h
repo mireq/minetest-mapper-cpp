@@ -37,10 +37,15 @@ class DbError {
 class ColorError {
 };
 
+class DecompressError {
+};
+
 class TileGenerator
 {
 private:
 	typedef std::map<std::string, Color> ColorMap;
+	typedef std::pair<BlockPos, std::string> Block;
+	typedef std::list<Block> BlockList;
 
 public:
 	TileGenerator();
@@ -48,8 +53,7 @@ public:
 	void setBgColor(const std::string &bgColor);
 	void setScaleColor(const std::string &scaleColor);
 	void setOriginColor(const std::string &originColor);
-	void setPlayerColor(const std::string &playerColor);
-	Color parseColor(const std::string &color);
+	void setPlayerColor(const std::string &playerColor); Color parseColor(const std::string &color);
 	void setDrawOrigin(bool drawOrigin);
 	void setDrawPlayers(bool drawPlayers);
 	void setDrawScale(bool drawScale);
@@ -66,8 +70,9 @@ private:
 	void createImage();
 	void renderMap();
 	std::list<int> getZValueList() const;
-	void getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
+	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void writeImage(const std::string &output);
+	void *zlibDecompress(const void *data, std::size_t *processed) const;
 
 private:
 	Color m_bgColor;

@@ -235,9 +235,22 @@ void TileGenerator::renderMap()
 	}
 
 	std::list<int> zlist = getZValueList();
-	for (std::list<int>::iterator position = zlist.begin(); position != zlist.end(); ++position) {
-		int zPos = *position;
-		getBlocksOnZ(zPos, statement);
+	for (std::list<int>::iterator zPosition = zlist.begin(); zPosition != zlist.end(); ++zPosition) {
+		int zPos = *zPosition;
+		map<int, BlockList> blocks = getBlocksOnZ(zPos, statement);
+		for (std::list<std::pair<int, int> >::const_iterator position = m_positions.begin(); position != m_positions.end(); ++position) {
+			if (position->second != zPos) {
+				continue;
+			}
+
+			int xPos = position->first;
+			blocks[xPos].sort();
+			const BlockList &blockStack = blocks[xPos];
+			for (BlockList::const_iterator it = blockStack.begin(); it != blockStack.end(); ++it) {
+				std::cout << it->first.y << std::endl;
+			}
+			std::cout << "---" << std::endl;
+		}
 	}
 }
 

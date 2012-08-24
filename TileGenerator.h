@@ -29,6 +29,28 @@ struct BlockPos {
 	int x;
 	int y;
 	int z;
+	bool operator<(const BlockPos& p) const
+	{
+		if (z > p.z) {
+			return true;
+		}
+		if (z < p.z) {
+			return false;
+		}
+		if (y > p.y) {
+			return true;
+		}
+		if (y < p.y) {
+			return false;
+		}
+		if (x > p.x) {
+			return true;
+		}
+		if (x < p.x) {
+			return false;
+		}
+		return false;
+	}
 };
 
 class DbError {

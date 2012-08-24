@@ -18,6 +18,8 @@
 #include <string>
 
 struct Color {
+	Color() {};
+	Color(uint8_t r, uint8_t g, uint8_t b): r(r), g(g), b(b) {};
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
@@ -58,11 +60,13 @@ public:
 private:
 	void openDb(const std::string &input);
 	void loadBlocks();
-	BlockPos decodeBlockPos(sqlite3_int64 blockId);
-	sqlite3_int64 encodeBlockPos(int x, int y, int z);
-	int unsignedToSigned(long i, long max_positive);
+	BlockPos decodeBlockPos(sqlite3_int64 blockId) const;
+	sqlite3_int64 encodeBlockPos(int x, int y, int z) const;
+	int unsignedToSigned(long i, long max_positive) const;
 	void createImage();
 	void renderMap();
+	std::list<int> getZValueList() const;
+	void getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void writeImage(const std::string &output);
 
 private:

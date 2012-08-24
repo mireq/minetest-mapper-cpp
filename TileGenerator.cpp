@@ -11,11 +11,16 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include "TileGenerator.h"
 
 using namespace std;
 
 TileGenerator::TileGenerator():
+	m_bgColor(255, 255, 255),
+	m_scaleColor(0, 0, 0),
+	m_originColor(255, 0, 0),
+	m_playerColor(255, 0, 0),
 	m_drawOrigin(false),
 	m_drawPlayers(false),
 	m_drawScale(false),
@@ -27,10 +32,6 @@ TileGenerator::TileGenerator():
 	m_zMin(0),
 	m_zMax(0)
 {
-	m_bgColor = {255, 255, 255};
-	m_scaleColor = {0, 0, 0};
-	m_originColor = {255, 0, 0};
-	m_playerColor = {255, 0, 0};
 }
 
 TileGenerator::~TileGenerator()
@@ -189,7 +190,7 @@ void TileGenerator::loadBlocks()
 	}
 }
 
-inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId)
+inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId) const
 {
 	BlockPos pos;
 	pos.x = unsignedToSigned(blockId % 4096, 2048);
@@ -200,12 +201,12 @@ inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId)
 	return pos;
 }
 
-inline sqlite3_int64 TileGenerator::encodeBlockPos(int x, int y, int z)
+inline sqlite3_int64 TileGenerator::encodeBlockPos(int x, int y, int z) const
 {
 	return sqlite3_int64(z) * 16777216l + sqlite3_int64(y) * 4096l + sqlite3_int64(x);
 }
 
-inline int TileGenerator::unsignedToSigned(long i, long max_positive)
+inline int TileGenerator::unsignedToSigned(long i, long max_positive) const
 {
 	if (i < max_positive) {
 		return i;
@@ -227,35 +228,69 @@ void TileGenerator::createImage()
 void TileGenerator::renderMap()
 {
 	sqlite3_stmt *statement;
-	//string sql = "SELECT pos, data FROM blocks WHERE pos >= ? AND pos <= ? AND (pos - ?) % 4096 = 0";
 	string sql = "SELECT pos, data FROM blocks WHERE pos >= ? AND pos <= ?";
-	std::list<int> zlist;
-	for (std::list<std::pair<int, int> >::iterator position = m_positions.begin(); position != m_positions.end(); ++position) {
-		zlist.push_back(position->second);
-	}
-	zlist.sort();
-	zlist.unique();
 	if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &statement, 0) != SQLITE_OK) {
 		throw DbError();
 	}
 
+	std::list<int> zlist = getZValueList();
 	for (std::list<int>::iterator position = zlist.begin(); position != zlist.end(); ++position) {
 		int zPos = *position;
+		getBlocksOnZ(zPos, statement);
+	}
+}
 
-		sqlite3_int64 psMin = encodeBlockPos(-2048, -2048, zPos);
-		sqlite3_int64 psMax = encodeBlockPos( 2047,  2047, zPos);
-		sqlite3_bind_int64(statement, 1, psMin);
-		sqlite3_bind_int64(statement, 2, psMax);
-		int result = 0;
-		while (true) {
-			result = sqlite3_step(statement);
-			if(result == SQLITE_ROW) {
+inline std::list<int> TileGenerator::getZValueList() const
+{
+	std::list<int> zlist;
+	for (std::list<std::pair<int, int> >::const_iterator position = m_positions.begin(); position != m_positions.end(); ++position) {
+		zlist.push_back(position->second);
+	}
+	zlist.sort();
+	zlist.unique();
+	return zlist;
+}
+
+void TileGenerator::getBlocksOnZ(int zPos, sqlite3_stmt *statement) const
+{
+	map <int, list <pair <BlockPos, string> > > blocks;
+
+	sqlite3_int64 psMin = encodeBlockPos(-2048, -2048, zPos);
+	sqlite3_int64 psMax = encodeBlockPos( 2047,  2047, zPos);
+	std::stringstream minStream;
+	std::stringstream maxStream;
+	minStream << psMin;
+	maxStream << psMax;
+	string minStr = minStream.str();
+	string maxStr = maxStream.str();
+	sqlite3_bind_text(statement, 1, minStr.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(statement, 2, maxStr.c_str(), -1, SQLITE_TRANSIENT);
+	int result = 0;
+	while (true) {
+		result = sqlite3_step(statement);
+		if(result == SQLITE_ROW) {
+			sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
+			const void *data = sqlite3_column_blob(statement, 1);
+
+			uint8_t version = static_cast<const uint8_t *>(data)[0];
+			uint8_t flags = static_cast<const uint8_t *>(data)[1];
+			if (version >= 22) {
+				data += 4;
 			}
 			else {
-				break;
+				data += 2;
 			}
+
+
+			BlockPos pos = decodeBlockPos(blocknum);
+			blocks[pos.x].push_back(pair<BlockPos, string> (pos, ""));
+
+		}
+		else {
+			break;
 		}
 	}
+	sqlite3_reset(statement);
 }
 
 void TileGenerator::writeImage(const std::string &output)

@@ -99,6 +99,7 @@ private:
 	void renderShading(int zPos);
 	void renderScale();
 	void renderOrigin();
+	void renderPlayers(const std::string &inputPath);
 	void writeImage(const std::string &output);
 	int getImageX(int val) const;
 	int getImageY(int val) const;

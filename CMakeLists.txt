@@ -25,13 +25,14 @@ find_package_handle_standard_args(LibSqlite3  DEFAULT_MSG LIBSQLITE3_LIBRARY LIB
 
 mark_as_advanced(LIBSQLITE3_INCLUDE_DIR LIBSQLITE3_LIBRARY )
 
-
+find_package(Boost COMPONENTS filesystem)
 
 include_directories(
 	"${PROJECT_BINARY_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	${LIBSQLITE3_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIRS}
 )
 
 set(mapper_HDRS
@@ -53,6 +54,7 @@ add_executable(minetest_mapper
 target_link_libraries(
 	minetest_mapper
 	${LIBSQLITE3_LIBRARIES}
+	${Boost_LIBRARIES}
 	gd
 	z
 )

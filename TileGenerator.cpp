@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <zlib.h>
+#include <boost/filesystem.hpp>
 #include "TileGenerator.h"
 
 using namespace std;
@@ -240,6 +241,9 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 	}
 	if (m_drawOrigin) {
 		renderOrigin();
+	}
+	if (m_drawPlayers) {
+		renderPlayers(input);
 	}
 	writeImage(output);
 }
@@ -538,6 +542,48 @@ void TileGenerator::renderOrigin()
 	int imageX = -m_xMin * 16 + m_border;
 	int imageY = m_mapHeight - m_zMin * -16 + m_border;
 	gdImageArc(m_image, imageX, imageY, 12, 12, 0, 360, rgb2int(m_originColor.r, m_originColor.g, m_originColor.b));
+}
+
+void TileGenerator::renderPlayers(const std::string &inputPath)
+{
+	int color = rgb2int(m_playerColor.r, m_playerColor.g, m_playerColor.b);
+
+	string playersPath = inputPath + "players";
+	boost::filesystem::path path(playersPath.c_str());
+	boost::filesystem::directory_iterator end_iter;
+	boost::filesystem::directory_iterator iter(path);
+	for (; iter != end_iter; ++iter) {
+		if (!boost::filesystem::is_directory(iter->status())) {
+			string path = iter->path().string();
+
+			ifstream in;
+			in.open(path.c_str(), ifstream::in);
+			string buffer;
+			string name;
+			string position;
+			while (getline(in, buffer)) {
+				if (buffer.find("name = ") == 0) {
+					name = buffer.substr(7);
+				}
+				else if (buffer.find("position = ") == 0) {
+					position = buffer.substr(12, buffer.length() - 13);
+				}
+			}
+			double x, y, z;
+			char comma;
+			istringstream positionStream(position, istringstream::in);
+			positionStream >> x;
+			positionStream >> comma;
+			positionStream >> y;
+			positionStream >> comma;
+			positionStream >> z;
+			int imageX = x / 10 - m_xMin * 16 + m_border;
+			int imageY = m_mapHeight - (z / 10 - m_zMin * 16) + m_border;
+
+			gdImageArc(m_image, imageX, imageY, 5, 5, 0, 360, color);
+			gdImageString(m_image, gdFontGetMediumBold(), imageX + 2, imageY + 2, reinterpret_cast<unsigned char *>(const_cast<char *>(name.c_str())), color);
+		}
+	}
 }
 
 inline std::list<int> TileGenerator::getZValueList() const

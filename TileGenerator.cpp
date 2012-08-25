@@ -475,6 +475,9 @@ inline void TileGenerator::renderShading(int zPos)
 			continue;
 		}
 		for (int x = 0; x < m_mapWidth; ++x) {
+			if (!m_blockPixelAttributes.attribute(z, x).valid_height() || !m_blockPixelAttributes.attribute(z, x - 1).valid_height() || !m_blockPixelAttributes.attribute(z - 1, x).valid_height()) {
+				continue;
+			}
 			int y = m_blockPixelAttributes.attribute(z, x).height;
 			int y1 = m_blockPixelAttributes.attribute(z, x - 1).height;
 			int y2 = m_blockPixelAttributes.attribute(z - 1, x).height;

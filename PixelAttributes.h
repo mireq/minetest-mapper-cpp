@@ -10,11 +10,15 @@
 #ifndef PIXELATTRIBUTES_H_ADZ35GYF
 #define PIXELATTRIBUTES_H_ADZ35GYF
 
+#include <limits>
 #include <vector>
 
 struct PixelAttribute {
-	PixelAttribute(): height(0) {};
+	PixelAttribute(): height(std::numeric_limits<int>::min()) {};
 	int height;
+	inline bool valid_height() {
+		return height != std::numeric_limits<int>::min();
+	}
 };
 
 class PixelAttributes

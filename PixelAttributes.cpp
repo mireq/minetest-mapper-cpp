@@ -8,7 +8,9 @@
  */
 
 #include "PixelAttributes.h"
+#include <algorithm>
 
+using namespace std;
 
 PixelAttributes::PixelAttributes()
 {
@@ -25,5 +27,8 @@ void PixelAttributes::setWidth(int width)
 void PixelAttributes::scroll()
 {
 	m_blockPixelAttributes[17] = m_blockPixelAttributes[1];
+	for (size_t i = 1; i < 17; ++i) {
+		fill(m_blockPixelAttributes[i].begin(), m_blockPixelAttributes[i].end(), PixelAttribute());
+	}
 }
 

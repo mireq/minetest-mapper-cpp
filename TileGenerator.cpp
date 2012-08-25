@@ -18,6 +18,89 @@
 
 using namespace std;
 
+static inline sqlite3_int64 pythonmodulo(sqlite3_int64 i, sqlite3_int64 mod)
+{
+	if (i >= 0) {
+		return i % mod;
+	}
+	else {
+		return mod - ((-i) % mod);
+	}
+}
+
+static inline int unsignedToSigned(long i, long max_positive)
+{
+	if (i < max_positive) {
+		return i;
+	}
+	else {
+		return i - 2l * max_positive;
+	}
+}
+
+static inline int readU16(const char *data)
+{
+	return int(data[0]) * 256 + data[1];
+}
+
+static inline int rgb2int(uint8_t r, uint8_t g, uint8_t b)
+{
+	return (r << 16) + (g << 8) + b;
+}
+
+static inline int readBlockContent(const unsigned char *mapData, int version, int datapos)
+{
+	if (version >= 24) {
+		size_t index = datapos << 1;
+		return (mapData[index] << 8) | mapData[index + 1];
+	}
+	else if (version >= 20) {
+		if (mapData[datapos] <= 0x80) {
+			return mapData[datapos];
+		}
+		else {
+			return (int(mapData[datapos]) << 4) | (int(mapData[datapos + 0x2000]) >> 4);
+		}
+	}
+	else {
+		throw VersionError();
+	}
+}
+
+static inline std::string zlibDecompress(const char *data, std::size_t size, std::size_t *processed)
+{
+	string buffer;
+	const size_t BUFSIZE = 128 * 1024;
+	uint8_t temp_buffer[BUFSIZE];
+
+	z_stream strm;
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.next_in = Z_NULL;
+	strm.avail_in = size;
+
+	if (inflateInit(&strm) != Z_OK) {
+		throw DecompressError();
+	}
+
+	strm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+	int ret = 0;
+	do {
+		strm.avail_out = BUFSIZE;
+		strm.next_out = temp_buffer;
+		ret = inflate(&strm, Z_NO_FLUSH);
+		buffer += string(reinterpret_cast<char *>(temp_buffer), BUFSIZE - strm.avail_out);
+	} while (ret == Z_OK);
+	if (ret != Z_STREAM_END) {
+		throw DecompressError();
+	}
+	*processed = (const char *)strm.next_in - (const char *)data;
+	(void)inflateEnd(&strm);
+
+	return buffer;
+}
+
 TileGenerator::TileGenerator():
 	m_bgColor(255, 255, 255),
 	m_scaleColor(0, 0, 0),
@@ -195,27 +278,12 @@ void TileGenerator::loadBlocks()
 inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId) const
 {
 	BlockPos pos;
-	pos.x = unsignedToSigned(blockId % 4096, 2048);
+	pos.x = unsignedToSigned(pythonmodulo(blockId, 4096), 2048);
 	blockId = (blockId - pos.x) / 4096;
-	pos.y = unsignedToSigned(blockId % 4096, 2048);
+	pos.y = unsignedToSigned(pythonmodulo(blockId, 4096), 2048);
 	blockId = (blockId - pos.y) / 4096;
-	pos.z = unsignedToSigned(blockId % 4096, 2048);
+	pos.z = unsignedToSigned(pythonmodulo(blockId, 4096), 2048);
 	return pos;
-}
-
-inline sqlite3_int64 TileGenerator::encodeBlockPos(int x, int y, int z) const
-{
-	return sqlite3_int64(z) * 16777216l + sqlite3_int64(y) * 4096l + sqlite3_int64(x);
-}
-
-inline int TileGenerator::unsignedToSigned(long i, long max_positive) const
-{
-	if (i < max_positive) {
-		return i;
-	}
-	else {
-		return i - 2l * max_positive;
-	}
 }
 
 void TileGenerator::createImage()
@@ -230,7 +298,7 @@ void TileGenerator::createImage()
 void TileGenerator::renderMap()
 {
 	sqlite3_stmt *statement;
-	string sql = "SELECT pos, data FROM blocks WHERE pos >= ? AND pos <= ?";
+	string sql = "SELECT pos, data FROM blocks WHERE (pos >= ? AND pos <= ?)";
 	if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &statement, 0) != SQLITE_OK) {
 		throw DbError();
 	}
@@ -383,25 +451,6 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 	}
 }
 
-inline int TileGenerator::readBlockContent(const unsigned char *mapData, int version, int datapos)
-{
-	if (version >= 24) {
-		size_t index = datapos << 1;
-		return (mapData[index] << 8) | mapData[index + 1];
-	}
-	else if (version >= 20) {
-		if (mapData[datapos] <= 0x80) {
-			return mapData[datapos];
-		}
-		else {
-			return (int(mapData[datapos]) << 4) | (int(mapData[datapos + 0x2000]) >> 4);
-		}
-	}
-	else {
-		throw VersionError();
-	}
-}
-
 inline std::list<int> TileGenerator::getZValueList() const
 {
 	std::list<int> zlist;
@@ -422,9 +471,9 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 
 	psMin = (static_cast<sqlite3_int64>(zPos) * 16777216l) - 0x800000;
 	psMax = (static_cast<sqlite3_int64>(zPos) * 16777216l) + 0x7fffff;
-
 	sqlite3_bind_int64(statement, 1, psMin);
 	sqlite3_bind_int64(statement, 2, psMax);
+
 	int result = 0;
 	while (true) {
 		result = sqlite3_step(statement);
@@ -451,49 +500,5 @@ void TileGenerator::writeImage(const std::string &output)
 	gdImagePng(m_image, out);
 	fclose(out);
 	gdImageDestroy(m_image);
-}
-
-inline std::string TileGenerator::zlibDecompress(const char *data, std::size_t size, std::size_t *processed) const
-{
-	string buffer;
-	const size_t BUFSIZE = 128 * 1024;
-	uint8_t temp_buffer[BUFSIZE];
-
-	z_stream strm;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.next_in = Z_NULL;
-	strm.avail_in = size;
-
-	if (inflateInit(&strm) != Z_OK) {
-		throw DecompressError();
-	}
-
-	strm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
-	int ret = 0;
-	do {
-		strm.avail_out = BUFSIZE;
-		strm.next_out = temp_buffer;
-		ret = inflate(&strm, Z_NO_FLUSH);
-		buffer += string(reinterpret_cast<char *>(temp_buffer), BUFSIZE - strm.avail_out);
-	} while (ret == Z_OK);
-	if (ret != Z_STREAM_END) {
-		throw DecompressError();
-	}
-	*processed = (const char *)strm.next_in - (const char *)data;
-	(void)inflateEnd(&strm);
-
-	return buffer;
-}
-
-inline int TileGenerator::readU16(const char *data)
-{
-	return int(data[0]) * 256 + data[1];
-}
-
-inline int TileGenerator::rgb2int(uint8_t r, uint8_t g, uint8_t b)
-{
-	return (r << 16) + (g << 8) + b;
 }
 

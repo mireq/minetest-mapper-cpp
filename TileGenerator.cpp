@@ -246,6 +246,7 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 		renderPlayers(input);
 	}
 	writeImage(output);
+	printUnknown();
 }
 
 void TileGenerator::openDb(const std::string &input)
@@ -468,6 +469,9 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 						m_readedPixels[z] |= (1 << x);
 						m_blockPixelAttributes.attribute(15 - z, xBegin + x).height = pos.y * 16 + y;
 					}
+					else {
+						m_unknownNodes.insert(name);
+					}
 					break;
 				}
 			}
@@ -635,6 +639,16 @@ void TileGenerator::writeImage(const std::string &output)
 	gdImagePng(m_image, out);
 	fclose(out);
 	gdImageDestroy(m_image);
+}
+
+void TileGenerator::printUnknown()
+{
+	if (m_unknownNodes.size() > 0) {
+		std::cerr << "Unknown nodes:" << std::endl;
+		for (std::set<std::string>::iterator node = m_unknownNodes.begin(); node != m_unknownNodes.end(); ++node) {
+			std::cerr << *node << std::endl;
+		}
+	}
 }
 
 inline int TileGenerator::getImageX(int val) const

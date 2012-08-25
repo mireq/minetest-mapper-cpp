@@ -16,6 +16,7 @@
 #include <sqlite3.h>
 #include <stdint.h>
 #include <string>
+#include <set>
 #include "PixelAttributes.h"
 
 struct Color {
@@ -101,6 +102,7 @@ private:
 	void renderOrigin();
 	void renderPlayers(const std::string &inputPath);
 	void writeImage(const std::string &output);
+	void printUnknown();
 	int getImageX(int val) const;
 	int getImageY(int val) const;
 
@@ -127,6 +129,7 @@ private:
 	std::map<int, std::string> m_nameMap;
 	ColorMap m_colors;
 	uint16_t m_readedPixels[16];
+	std::set<std::string> m_unknownNodes;
 
 	int m_blockAirId;
 	int m_blockIgnoreId;

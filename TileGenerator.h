@@ -98,7 +98,10 @@ private:
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version);
 	void renderShading(int zPos);
+	void renderScale();
 	void writeImage(const std::string &output);
+	int getImageX(int val) const;
+	int getImageY(int val) const;
 
 private:
 	Color m_bgColor;
@@ -109,6 +112,7 @@ private:
 	bool m_drawPlayers;
 	bool m_drawScale;
 	bool m_drawUnderground;
+	int m_border;
 
 	sqlite3 *m_db;
 	gdImagePtr m_image;

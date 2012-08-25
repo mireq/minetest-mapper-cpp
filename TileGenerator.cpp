@@ -122,6 +122,7 @@ TileGenerator::TileGenerator():
 	m_drawPlayers(false),
 	m_drawScale(false),
 	m_drawUnderground(false),
+	m_border(0),
 	m_db(0),
 	m_image(0),
 	m_xMin(0),
@@ -190,6 +191,9 @@ void TileGenerator::setDrawPlayers(bool drawPlayers)
 void TileGenerator::setDrawScale(bool drawScale)
 {
 	m_drawScale = drawScale;
+	if (m_drawScale) {
+		m_border = 40;
+	}
 }
 
 void TileGenerator::setDrawUnderground(bool drawUnderground)
@@ -236,6 +240,9 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 	loadBlocks();
 	createImage();
 	renderMap();
+	if (m_drawScale) {
+		renderScale();
+	}
 	writeImage(output);
 }
 
@@ -302,10 +309,10 @@ void TileGenerator::createImage()
 {
 	m_mapWidth = (m_xMax - m_xMin + 1) * 16;
 	m_mapHeight = (m_zMax - m_zMin + 1) * 16;
-	m_image = gdImageCreateTrueColor(m_mapWidth, m_mapHeight);
+	m_image = gdImageCreateTrueColor(m_mapWidth + m_border, m_mapHeight + m_border);
 	m_blockPixelAttributes.setWidth(m_mapWidth);
 	// Background
-	gdImageFilledRectangle(m_image, 0, 0, m_mapWidth - 1, m_mapHeight -1, rgb2int(m_bgColor.r, m_bgColor.g, m_bgColor.b));
+	gdImageFilledRectangle(m_image, 0, 0, m_mapWidth + m_border - 1, m_mapHeight + m_border -1, rgb2int(m_bgColor.r, m_bgColor.g, m_bgColor.b));
 }
 
 void TileGenerator::renderMap()
@@ -437,12 +444,12 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 	int zBegin = (m_zMax - pos.z) * 16;
 	const unsigned char *mapData = reinterpret_cast<const unsigned char *>(mapBlock.c_str());
 	for (int z = 0; z < 16; ++z) {
-		int imageY = zBegin + 15 - z;
+		int imageY = getImageY(zBegin + 15 - z);
 		for (int x = 0; x < 16; ++x) {
 			if (m_readedPixels[z] & (1 << x)) {
 				continue;
 			}
-			int imageX = xBegin + x;
+			int imageX = getImageX(xBegin + x);
 			for (int y = 15; y >= 0; --y) {
 				int position = x + (y << 4) + (z << 8);
 				int content = readBlockContent(mapData, version, position);
@@ -474,6 +481,7 @@ inline void TileGenerator::renderShading(int zPos)
 		if (imageY >= m_mapHeight) {
 			continue;
 		}
+		imageY = getImageY(imageY);
 		for (int x = 0; x < m_mapWidth; ++x) {
 			if (!m_blockPixelAttributes.attribute(z, x).valid_height() || !m_blockPixelAttributes.attribute(z, x - 1).valid_height() || !m_blockPixelAttributes.attribute(z - 1, x).valid_height()) {
 				continue;
@@ -485,17 +493,21 @@ inline void TileGenerator::renderShading(int zPos)
 			if (d > 36) {
 				d = 36;
 			}
-			int sourceColor = m_image->tpixels[imageY][x] & 0xffffff;
+			int sourceColor = m_image->tpixels[imageY][getImageX(x)] & 0xffffff;
 			int r = (sourceColor & 0xff0000) >> 16;
 			int g = (sourceColor & 0x00ff00) >> 8;
 			int b = (sourceColor & 0x0000ff);
 			r = colorSafeBounds(r + d);
 			g = colorSafeBounds(g + d);
 			b = colorSafeBounds(b + d);
-			m_image->tpixels[imageY][x] = rgb2int(r, g, b);
+			m_image->tpixels[imageY][getImageX(x)] = rgb2int(r, g, b);
 		}
 	}
 	m_blockPixelAttributes.scroll();
+}
+
+void TileGenerator::renderScale()
+{
 }
 
 inline std::list<int> TileGenerator::getZValueList() const
@@ -547,5 +559,15 @@ void TileGenerator::writeImage(const std::string &output)
 	gdImagePng(m_image, out);
 	fclose(out);
 	gdImageDestroy(m_image);
+}
+
+inline int TileGenerator::getImageX(int val) const
+{
+	return val + m_border;
+}
+
+inline int TileGenerator::getImageY(int val) const
+{
+	return val + m_border;
 }
 

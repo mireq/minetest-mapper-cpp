@@ -16,6 +16,7 @@
 #include <sqlite3.h>
 #include <stdint.h>
 #include <string>
+#include "PixelAttributes.h"
 
 struct Color {
 	Color(): r(255), g(255), b(255) {};
@@ -65,6 +66,7 @@ class DecompressError {
 class VersionError {
 };
 
+
 class TileGenerator
 {
 private:
@@ -95,6 +97,7 @@ private:
 	std::list<int> getZValueList() const;
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
 	void renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version);
+	void renderShading(int zPos);
 	void writeImage(const std::string &output);
 
 private:
@@ -109,12 +112,13 @@ private:
 
 	sqlite3 *m_db;
 	gdImagePtr m_image;
+	PixelAttributes m_blockPixelAttributes;
 	int m_xMin;
 	int m_xMax;
 	int m_zMin;
 	int m_zMax;
-	int m_imgWidth;
-	int m_imgHeight;
+	int m_mapWidth;
+	int m_mapHeight;
 	std::list<std::pair<int, int> > m_positions;
 	std::map<int, std::string> m_nameMap;
 	ColorMap m_colors;

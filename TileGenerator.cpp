@@ -12,7 +12,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <vector>
 #include <zlib.h>
 #include "TileGenerator.h"
 
@@ -99,6 +98,19 @@ static inline std::string zlibDecompress(const char *data, std::size_t size, std
 	(void)inflateEnd(&strm);
 
 	return buffer;
+}
+
+static inline int colorSafeBounds(int color)
+{
+	if (color > 255) {
+		return 255;
+	}
+	else if (color < 0) {
+		return 0;
+	}
+	else {
+		return color;
+	}
 }
 
 TileGenerator::TileGenerator():
@@ -288,11 +300,12 @@ inline BlockPos TileGenerator::decodeBlockPos(sqlite3_int64 blockId) const
 
 void TileGenerator::createImage()
 {
-	m_imgWidth = (m_xMax - m_xMin + 1) * 16;
-	m_imgHeight = (m_zMax - m_zMin + 1) * 16;
-	m_image = gdImageCreateTrueColor(m_imgWidth, m_imgHeight);
+	m_mapWidth = (m_xMax - m_xMin + 1) * 16;
+	m_mapHeight = (m_zMax - m_zMin + 1) * 16;
+	m_image = gdImageCreateTrueColor(m_mapWidth, m_mapHeight);
+	m_blockPixelAttributes.setWidth(m_mapWidth);
 	// Background
-	gdImageFilledRectangle(m_image, 0, 0, m_imgWidth - 1, m_imgHeight -1, rgb2int(m_bgColor.r, m_bgColor.g, m_bgColor.b));
+	gdImageFilledRectangle(m_image, 0, 0, m_mapWidth - 1, m_mapHeight -1, rgb2int(m_bgColor.r, m_bgColor.g, m_bgColor.b));
 }
 
 void TileGenerator::renderMap()
@@ -414,6 +427,7 @@ void TileGenerator::renderMap()
 				}
 			}
 		}
+		renderShading(zPos);
 	}
 }
 
@@ -423,7 +437,7 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 	int zBegin = (m_zMax - pos.z) * 16;
 	const unsigned char *mapData = reinterpret_cast<const unsigned char *>(mapBlock.c_str());
 	for (int z = 0; z < 16; ++z) {
-		int imageY = zBegin + 16 - z;
+		int imageY = zBegin + 15 - z;
 		for (int x = 0; x < 16; ++x) {
 			if (m_readedPixels[z] & (1 << x)) {
 				continue;
@@ -443,12 +457,42 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 						const Color &c = color->second;
 						m_image->tpixels[imageY][imageX] = rgb2int(c.r, c.g, c.b);
 						m_readedPixels[z] |= (1 << x);
+						m_blockPixelAttributes.attribute(15 - z, xBegin + x).height = pos.y * 16 + y;
 					}
 					break;
 				}
 			}
 		}
 	}
+}
+
+inline void TileGenerator::renderShading(int zPos)
+{
+	int zBegin = (m_zMax - zPos) * 16;
+	for (int z = 1; z < 17; ++z) {
+		int imageY = zBegin + z;
+		if (imageY >= m_mapHeight) {
+			continue;
+		}
+		for (int x = 0; x < m_mapWidth; ++x) {
+			int y = m_blockPixelAttributes.attribute(z, x).height;
+			int y1 = m_blockPixelAttributes.attribute(z, x - 1).height;
+			int y2 = m_blockPixelAttributes.attribute(z - 1, x).height;
+			int d = ((y - y1) + (y - y2)) * 12;
+			if (d > 36) {
+				d = 36;
+			}
+			int sourceColor = m_image->tpixels[imageY][x] & 0xffffff;
+			int r = (sourceColor & 0xff0000) >> 16;
+			int g = (sourceColor & 0x00ff00) >> 8;
+			int b = (sourceColor & 0x0000ff);
+			r = colorSafeBounds(r + d);
+			g = colorSafeBounds(g + d);
+			b = colorSafeBounds(b + d);
+			m_image->tpixels[imageY][x] = rgb2int(r, g, b);
+		}
+	}
+	m_blockPixelAttributes.scroll();
 }
 
 inline std::list<int> TileGenerator::getZValueList() const

@@ -35,11 +35,13 @@ include_directories(
 )
 
 set(mapper_HDRS
+	PixelAttributes.h
 	TileGenerator.h
 )
 
 set(mapper_SRCS
 	mapper.cpp
+	PixelAttributes.cpp
 	TileGenerator.cpp
 )
 

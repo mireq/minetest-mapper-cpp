@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <gdfontmb.h>
 #include <iostream>
 #include <sstream>
 #include <zlib.h>
@@ -507,6 +508,31 @@ inline void TileGenerator::renderShading(int zPos)
 
 void TileGenerator::renderScale()
 {
+	int color = rgb2int(m_scaleColor.r, m_scaleColor.g, m_scaleColor.b);
+	gdImageString(m_image, gdFontGetMediumBold(), 24, 0, reinterpret_cast<unsigned char *>(const_cast<char *>("X")), color);
+	gdImageString(m_image, gdFontGetMediumBold(), 2, 24, reinterpret_cast<unsigned char *>(const_cast<char *>("Z")), color);
+
+	string scaleText;
+
+	for (int i = (m_xMin / 4) * 4; i <= m_xMax; i += 4) {
+		stringstream buf;
+		buf << i * 16;
+		scaleText = buf.str();
+
+		int xPos = m_xMin * -16 + i * 16 + m_border;
+		gdImageString(m_image, gdFontGetMediumBold(), xPos + 2, 0, reinterpret_cast<unsigned char *>(const_cast<char *>(scaleText.c_str())), color);
+		gdImageLine(m_image, xPos, 0, xPos, m_border - 1, color);
+	}
+
+	for (int i = (m_zMax / 4) * 4; i >= m_zMin; i -= 4) {
+		stringstream buf;
+		buf << i * 16;
+		scaleText = buf.str();
+
+		int yPos = m_mapHeight - 1 - (i * 16 - m_zMin * 16) + m_border;
+		gdImageString(m_image, gdFontGetMediumBold(), 2, yPos, reinterpret_cast<unsigned char *>(const_cast<char *>(scaleText.c_str())), color);
+		gdImageLine(m_image, 0, yPos, m_border - 1, yPos, color);
+	}
 }
 
 inline std::list<int> TileGenerator::getZValueList() const

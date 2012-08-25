@@ -28,7 +28,6 @@ void usage()
   --drawscale\n\
   --drawplayers\n\
   --draworigin\n\
-  --drawunderground\n\
 Color format: '#000000'\n";
 	std::cout << usage_text;
 }
@@ -47,7 +46,6 @@ int main(int argc, char *argv[])
 		{"draworigin", no_argument, 0, 'R'},
 		{"drawplayers", no_argument, 0, 'P'},
 		{"drawscale", no_argument, 0, 'S'},
-		{"drawunderground", no_argument, 0, 'U'}
 	};
 
 	string input;
@@ -96,9 +94,6 @@ int main(int argc, char *argv[])
 				generator.setDrawPlayers(true);
 				break;
 			case 'S':
-				generator.setDrawScale(true);
-				break;
-			case 'U':
 				generator.setDrawScale(true);
 				break;
 			default:

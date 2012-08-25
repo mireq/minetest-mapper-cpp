@@ -121,7 +121,6 @@ TileGenerator::TileGenerator():
 	m_drawOrigin(false),
 	m_drawPlayers(false),
 	m_drawScale(false),
-	m_drawUnderground(false),
 	m_border(0),
 	m_db(0),
 	m_image(0),

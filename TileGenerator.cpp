@@ -196,11 +196,6 @@ void TileGenerator::setDrawScale(bool drawScale)
 	}
 }
 
-void TileGenerator::setDrawUnderground(bool drawUnderground)
-{
-	m_drawUnderground = drawUnderground;
-}
-
 void TileGenerator::parseColorsFile(const std::string &fileName)
 {
 	ifstream in;
@@ -242,6 +237,9 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 	renderMap();
 	if (m_drawScale) {
 		renderScale();
+	}
+	if (m_drawOrigin) {
+		renderOrigin();
 	}
 	writeImage(output);
 }
@@ -533,6 +531,13 @@ void TileGenerator::renderScale()
 		gdImageString(m_image, gdFontGetMediumBold(), 2, yPos, reinterpret_cast<unsigned char *>(const_cast<char *>(scaleText.c_str())), color);
 		gdImageLine(m_image, 0, yPos, m_border - 1, yPos, color);
 	}
+}
+
+void TileGenerator::renderOrigin()
+{
+	int imageX = -m_xMin * 16 + m_border;
+	int imageY = m_mapHeight - m_zMin * -16 + m_border;
+	gdImageArc(m_image, imageX, imageY, 12, 12, 0, 360, rgb2int(m_originColor.r, m_originColor.g, m_originColor.b));
 }
 
 inline std::list<int> TileGenerator::getZValueList() const

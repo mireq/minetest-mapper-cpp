@@ -84,7 +84,6 @@ public:
 	void setDrawOrigin(bool drawOrigin);
 	void setDrawPlayers(bool drawPlayers);
 	void setDrawScale(bool drawScale);
-	void setDrawUnderground(bool drawUnderground);
 	void parseColorsFile(const std::string &fileName);
 	void generate(const std::string &input, const std::string &output);
 
@@ -99,6 +98,7 @@ private:
 	void renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version);
 	void renderShading(int zPos);
 	void renderScale();
+	void renderOrigin();
 	void writeImage(const std::string &output);
 	int getImageX(int val) const;
 	int getImageY(int val) const;
@@ -111,7 +111,6 @@ private:
 	bool m_drawOrigin;
 	bool m_drawPlayers;
 	bool m_drawScale;
-	bool m_drawUnderground;
 	int m_border;
 
 	sqlite3 *m_db;

@@ -41,7 +41,7 @@ static inline int unsignedToSigned(long i, long max_positive)
 
 static inline int readU16(const char *data)
 {
-	return int(data[0]) * 256 + data[1];
+	return uint8_t(data[0]) * 256 + uint8_t(data[1]);
 }
 
 static inline int rgb2int(uint8_t r, uint8_t g, uint8_t b)

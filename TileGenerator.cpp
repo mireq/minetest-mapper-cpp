@@ -635,7 +635,7 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 void TileGenerator::writeImage(const std::string &output)
 {
 	FILE *out;
-	out = fopen(output.c_str(), "w");
+	out = fopen(output.c_str(), "wb");
 	gdImagePng(m_image, out);
 	fclose(out);
 	gdImageDestroy(m_image);

@@ -14,7 +14,8 @@
 #include <iostream>
 #include <sstream>
 #include <zlib.h>
-#include <boost/filesystem.hpp>
+#include <dirent.h>
+#include "config.h"
 #include "TileGenerator.h"
 
 using namespace std;
@@ -554,41 +555,48 @@ void TileGenerator::renderPlayers(const std::string &inputPath)
 	int color = rgb2int(m_playerColor.r, m_playerColor.g, m_playerColor.b);
 
 	string playersPath = inputPath + "players";
-	boost::filesystem::path path(playersPath.c_str());
-	boost::filesystem::directory_iterator end_iter;
-	boost::filesystem::directory_iterator iter(path);
-	for (; iter != end_iter; ++iter) {
-		if (!boost::filesystem::is_directory(iter->status())) {
-			string path = iter->path().string();
-
-			ifstream in;
-			in.open(path.c_str(), ifstream::in);
-			string buffer;
-			string name;
-			string position;
-			while (getline(in, buffer)) {
-				if (buffer.find("name = ") == 0) {
-					name = buffer.substr(7);
-				}
-				else if (buffer.find("position = ") == 0) {
-					position = buffer.substr(12, buffer.length() - 13);
-				}
-			}
-			double x, y, z;
-			char comma;
-			istringstream positionStream(position, istringstream::in);
-			positionStream >> x;
-			positionStream >> comma;
-			positionStream >> y;
-			positionStream >> comma;
-			positionStream >> z;
-			int imageX = x / 10 - m_xMin * 16 + m_border;
-			int imageY = m_mapHeight - (z / 10 - m_zMin * 16) + m_border;
-
-			gdImageArc(m_image, imageX, imageY, 5, 5, 0, 360, color);
-			gdImageString(m_image, gdFontGetMediumBold(), imageX + 2, imageY + 2, reinterpret_cast<unsigned char *>(const_cast<char *>(name.c_str())), color);
-		}
+	DIR *dir;
+	dir = opendir (playersPath.c_str());
+	if (dir == NULL) {
+		return;
 	}
+
+	struct dirent *ent;
+	while ((ent = readdir (dir)) != NULL) {
+		if (ent->d_type == DT_DIR) {
+			continue;
+		}
+
+		string path = playersPath + PATH_SEPARATOR + ent->d_name;
+
+		ifstream in;
+		in.open(path.c_str(), ifstream::in);
+		string buffer;
+		string name;
+		string position;
+		while (getline(in, buffer)) {
+			if (buffer.find("name = ") == 0) {
+				name = buffer.substr(7);
+			}
+			else if (buffer.find("position = ") == 0) {
+				position = buffer.substr(12, buffer.length() - 13);
+			}
+		}
+		double x, y, z;
+		char comma;
+		istringstream positionStream(position, istringstream::in);
+		positionStream >> x;
+		positionStream >> comma;
+		positionStream >> y;
+		positionStream >> comma;
+		positionStream >> z;
+		int imageX = x / 10 - m_xMin * 16 + m_border;
+		int imageY = m_mapHeight - (z / 10 - m_zMin * 16) + m_border;
+
+		gdImageArc(m_image, imageX, imageY, 5, 5, 0, 360, color);
+		gdImageString(m_image, gdFontGetMediumBold(), imageX + 2, imageY + 2, reinterpret_cast<unsigned char *>(const_cast<char *>(name.c_str())), color);
+	}
+	closedir(dir);
 }
 
 inline std::list<int> TileGenerator::getZValueList() const

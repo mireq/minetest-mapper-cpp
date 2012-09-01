@@ -11,7 +11,7 @@
 #define PIXELATTRIBUTES_H_ADZ35GYF
 
 #include <limits>
-#include <vector>
+#include "config.h"
 
 struct PixelAttribute {
 	PixelAttribute(): height(std::numeric_limits<int>::min()) {};
@@ -25,12 +25,23 @@ class PixelAttributes
 {
 public:
 	PixelAttributes();
+	virtual ~PixelAttributes();
 	void setWidth(int width);
 	void scroll();
-	inline PixelAttribute &attribute(int z, int x) { return m_blockPixelAttributes[z + 1][x + 1]; };
+	inline PixelAttribute &attribute(int z, int x) { return m_pixelAttributes[z + 1][x + 1]; };
 
 private:
-	std::vector <std::vector <PixelAttribute> > m_blockPixelAttributes;
+	void freeAttributes();
+
+private:
+	enum Line {
+		FirstLine = 0,
+		LastLine = BLOCK_SIZE,
+		EmptyLine = BLOCK_SIZE + 1,
+		BlockCount = BLOCK_SIZE + 2
+	};
+	PixelAttribute *m_pixelAttributes[BLOCK_SIZE + 2]; // 1px gradient + empty
+	int m_width;
 };
 
 #endif /* end of include guard: PIXELATTRIBUTES_H_ADZ35GYF */

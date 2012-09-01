@@ -7,28 +7,49 @@
  * =====================================================================
  */
 
+#include <cstdlib>
+#include <cstring>
 #include "PixelAttributes.h"
-#include <algorithm>
 
 using namespace std;
 
-PixelAttributes::PixelAttributes()
+PixelAttributes::PixelAttributes():
+	m_width(0)
 {
-	m_blockPixelAttributes.resize(17); // 16px + 1px gradient calculation
+	for (size_t i = 0; i < BlockCount; ++i) {
+		m_pixelAttributes[i] = 0;
+	}
+}
+
+PixelAttributes::~PixelAttributes()
+{
+	freeAttributes();
 }
 
 void PixelAttributes::setWidth(int width)
 {
-	for (size_t i = 0; i < 17; ++i) {
-		m_blockPixelAttributes[i].resize(width + 2); // Width + 1 px gradient calculation on both sides
+	freeAttributes();
+	m_width = width;
+	for (size_t i = 0; i < BlockCount; ++i) {
+		m_pixelAttributes[i] = new PixelAttribute[m_width + 1];
 	}
 }
 
 void PixelAttributes::scroll()
 {
-	m_blockPixelAttributes[0] = m_blockPixelAttributes[16];
-	for (size_t i = 1; i < 17; ++i) {
-		fill(m_blockPixelAttributes[i].begin(), m_blockPixelAttributes[i].end(), PixelAttribute());
+	memcpy(m_pixelAttributes[FirstLine], m_pixelAttributes[LastLine], (m_width + 1) * sizeof(PixelAttribute));
+	for (size_t i = 1; i < BlockCount - 1; ++i) {
+		memcpy(m_pixelAttributes[i], m_pixelAttributes[EmptyLine], (m_width + 1) * sizeof(PixelAttribute));
+	}
+}
+
+void PixelAttributes::freeAttributes()
+{
+	for (size_t i = 0; i < BlockCount; ++i) {
+		if (m_pixelAttributes[i] != 0) {
+			delete[] m_pixelAttributes[i];
+			m_pixelAttributes[i] = 0;
+		}
 	}
 }
 

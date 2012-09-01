@@ -12,3 +12,5 @@
 #else
 #define PATH_SEPARATOR '/'
 #endif
+
+#define BLOCK_SIZE 16

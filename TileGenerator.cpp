@@ -484,7 +484,7 @@ inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const Blo
 inline void TileGenerator::renderShading(int zPos)
 {
 	int zBegin = (m_zMax - zPos) * 16;
-	for (int z = 1; z < 17; ++z) {
+	for (int z = 0; z < 16; ++z) {
 		int imageY = zBegin + z;
 		if (imageY >= m_mapHeight) {
 			continue;
@@ -607,6 +607,7 @@ inline std::list<int> TileGenerator::getZValueList() const
 	}
 	zlist.sort();
 	zlist.unique();
+	zlist.reverse();
 	return zlist;
 }
 

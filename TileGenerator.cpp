@@ -575,7 +575,7 @@ void TileGenerator::renderPlayers(const std::string &inputPath)
 
 	struct dirent *ent;
 	while ((ent = readdir (dir)) != NULL) {
-		if (ent->d_type == DT_DIR) {
+		if (ent->d_name[0] == '.') {
 			continue;
 		}
 

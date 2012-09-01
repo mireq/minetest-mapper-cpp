@@ -252,7 +252,8 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 void TileGenerator::openDb(const std::string &input)
 {
 	string db_name = input + "map.sqlite";
-	if (sqlite3_open(db_name.c_str(), &m_db) != SQLITE_OK) {
+	if (sqlite3_open_v2(db_name.c_str(), &m_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_PRIVATECACHE, 0) != SQLITE_OK) {
+		std::cerr << sqlite3_errmsg(m_db) << ", Database file: " << db_name << std::endl;
 		throw DbError();
 	}
 }

@@ -55,13 +55,15 @@ include_directories(
 
 set(mapper_HDRS
 	PixelAttributes.h
+	PlayerAttributes.h
 	TileGenerator.h
 )
 
 set(mapper_SRCS
-	mapper.cpp
 	PixelAttributes.cpp
+	PlayerAttributes.cpp
 	TileGenerator.cpp
+	mapper.cpp
 )
 
 add_executable(minetest_mapper

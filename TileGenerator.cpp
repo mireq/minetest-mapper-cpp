@@ -233,7 +233,12 @@ void TileGenerator::parseColorsFile(const std::string &fileName)
 
 void TileGenerator::generate(const std::string &input, const std::string &output)
 {
-	openDb(input);
+	string input_path = input;
+	if (input_path[input.length() - 1] != PATH_SEPARATOR) {
+		input_path += PATH_SEPARATOR;
+	}
+
+	openDb(input_path);
 	loadBlocks();
 	createImage();
 	renderMap();
@@ -244,7 +249,7 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 		renderOrigin();
 	}
 	if (m_drawPlayers) {
-		renderPlayers(input);
+		renderPlayers(input_path);
 	}
 	writeImage(output);
 	printUnknown();

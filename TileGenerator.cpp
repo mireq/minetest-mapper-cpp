@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include "config.h"
 #include "TileGenerator.h"
+#include "colors.h"
 
 using namespace std;
 
@@ -132,6 +133,9 @@ TileGenerator::TileGenerator():
 	m_zMin(0),
 	m_zMax(0)
 {
+	string colors_txt_data(reinterpret_cast<char *>(colors_txt), colors_txt_len);
+	istringstream colors_stream(colors_txt_data);
+	parseColorsStream(colors_stream);
 }
 
 TileGenerator::~TileGenerator()
@@ -203,32 +207,9 @@ void TileGenerator::parseColorsFile(const std::string &fileName)
 	ifstream in;
 	in.open(fileName.c_str(), ifstream::in);
 	if (!in.is_open()) {
-		std::cerr << "File colors.txt does not exist" << std::endl;
-		exit(-2);
+		return;
 	}
-
-	while (in.good()) {
-		string name;
-		Color color;
-		in >> name;
-		if (name[0] == '#') {
-			in.ignore(65536, '\n');
-			in >> name;
-		}
-		while (name == "\n" && in.good()) {
-			in >> name;
-		}
-		int r, g, b;
-		in >> r;
-		in >> g;
-		in >> b;
-		if (in.good()) {
-			color.r = r;
-			color.g = g;
-			color.b = b;
-			m_colors[name] = color;
-		}
-	}
+	parseColorsStream(in);
 }
 
 void TileGenerator::generate(const std::string &input, const std::string &output)
@@ -253,6 +234,32 @@ void TileGenerator::generate(const std::string &input, const std::string &output
 	}
 	writeImage(output);
 	printUnknown();
+}
+
+void TileGenerator::parseColorsStream(std::istream &in)
+{
+	while (in.good()) {
+		string name;
+		Color color;
+		in >> name;
+		if (name[0] == '#') {
+			in.ignore(65536, '\n');
+			in >> name;
+		}
+		while (name == "\n" && in.good()) {
+			in >> name;
+		}
+		int r, g, b;
+		in >> r;
+		in >> g;
+		in >> b;
+		if (in.good()) {
+			color.r = r;
+			color.g = g;
+			color.b = b;
+			m_colors[name] = color;
+		}
+	}
 }
 
 void TileGenerator::openDb(const std::string &input)

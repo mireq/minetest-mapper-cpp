@@ -19,11 +19,32 @@ find_path(LIBSQLITE3_INCLUDE_DIR sqlite3.h HINTS ${PC_LIBSQLITE_INCLUDEDIR} ${PC
 find_library(LIBSQLITE3_LIBRARY NAMES sqlite3 libsqlite3 HINTS ${PC_LIBSQLITE_LIBDIR} ${PC_LIBSQLITE_LIBRARY_DIRS})
 
 set(LIBSQLITE3_LIBRARIES ${LIBSQLITE3_LIBRARY} )
-set(LIBSQLITE3_INCLUDE_DIRS ${LIBSQLITE3_INCLUDE_DIR} )
+set(LIBSQLITE3_INCLUDE_DIRS ${LIBSQLITE3_INCLUDE_DIR})
 
 find_package_handle_standard_args(LibSqlite3  DEFAULT_MSG LIBSQLITE3_LIBRARY LIBSQLITE3_INCLUDE_DIR)
 
-mark_as_advanced(LIBSQLITE3_INCLUDE_DIR LIBSQLITE3_LIBRARY )
+mark_as_advanced(LIBSQLITE3_INCLUDE_DIR LIBSQLITE3_LIBRARY)
+
+if (LIBSQLITE3_INCLUDE_DIR)
+else (LIBSQLITE3_INCLUDE_DIR)
+	message(FATAL_ERROR "Could not find sqlite3")
+endif (LIBSQLITE3_INCLUDE_DIR)
+
+find_program(XXD_EXECUTABLE xxd)
+
+if (XXD_EXECUTABLE)
+	message(STATUS "Found xxd")
+else (XXD_EXECUTABLE)
+	message(FATAL_ERROR "Executable xxd not found")
+endif (XXD_EXECUTABLE)
+
+add_custom_command(
+	OUTPUT colors.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/colors.txt colors.txt
+	COMMAND xxd -i colors.txt colors.h
+	DEPENDS colors.txt
+)
+set_property(SOURCE TileGenerator.cpp APPEND PROPERTY OBJECT_DEPENDS colors.h)
 
 include_directories(
 	"${PROJECT_BINARY_DIR}"

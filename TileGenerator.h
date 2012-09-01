@@ -11,12 +11,13 @@
 #define TILEGENERATOR_H_JJNUCARH
 
 #include <gd.h>
+#include <iosfwd>
 #include <list>
 #include <map>
+#include <set>
 #include <sqlite3.h>
 #include <stdint.h>
 #include <string>
-#include <set>
 #include "PixelAttributes.h"
 
 struct Color {
@@ -89,6 +90,7 @@ public:
 	void generate(const std::string &input, const std::string &output);
 
 private:
+	void parseColorsStream(std::istream &in);
 	void openDb(const std::string &input);
 	void loadBlocks();
 	BlockPos decodeBlockPos(sqlite3_int64 blockId) const;

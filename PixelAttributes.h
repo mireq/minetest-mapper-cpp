@@ -38,7 +38,7 @@ private:
 		FirstLine = 0,
 		LastLine = BLOCK_SIZE,
 		EmptyLine = BLOCK_SIZE + 1,
-		BlockCount = BLOCK_SIZE + 2
+		LineCount = BLOCK_SIZE + 2
 	};
 	PixelAttribute *m_pixelAttributes[BLOCK_SIZE + 2]; // 1px gradient + empty
 	int m_width;

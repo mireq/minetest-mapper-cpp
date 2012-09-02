@@ -13,6 +13,7 @@ Requirements
 Compilation
 -----------
 
+::
     git clone git://github.com/mireq/minetest-mapper-cpp.git minetest-mapper-cpp
     cd minetest-mapper-cpp/
     cmake .
@@ -24,6 +25,7 @@ Usage
 Binary `minetest_mapper` has two mandatory paremeters, `-i` (input world path)
 and `-o` (output image path).
 
+::
     ./minetest_mapper -i /home/user/.minetest/worlds/my_world/ -o /home/user/map.png
 
 

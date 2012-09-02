@@ -1,14 +1,13 @@
 Minetest Mapper C++
 ===================
 
-A port of minetestmapper.py to C++ from [minetest](https://github.com/celeron55/minetest/tree/master/util)
+A port of minetestmapper.py to C++ from https://github.com/celeron55/minetest/tree/master/util
 
 Requirements
 ------------
 
 * libgd
 * sqlite3
-* dirent
 * xxd binary
 
 Compilation

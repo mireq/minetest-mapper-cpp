@@ -73,7 +73,7 @@ class TileGenerator
 {
 private:
 	typedef std::map<std::string, Color> ColorMap;
-	typedef std::pair<BlockPos, std::string> Block;
+	typedef std::pair<BlockPos, std::basic_string<unsigned char> > Block;
 	typedef std::list<Block> BlockList;
 
 public:

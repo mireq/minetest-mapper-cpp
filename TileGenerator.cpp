@@ -41,9 +41,9 @@ static inline int unsignedToSigned(long i, long max_positive)
 	}
 }
 
-static inline int readU16(const char *data)
+static inline uint16_t readU16(const unsigned char *data)
 {
-	return uint8_t(data[0]) * 256 + uint8_t(data[1]);
+	return data[0] << 8 | data[1];
 }
 
 static inline int rgb2int(uint8_t r, uint8_t g, uint8_t b)
@@ -70,7 +70,7 @@ static inline int readBlockContent(const unsigned char *mapData, int version, in
 	}
 }
 
-static inline std::string zlibDecompress(const char *data, std::size_t size, std::size_t *processed)
+static inline std::string zlibDecompress(const unsigned char *data, std::size_t size, std::size_t *processed)
 {
 	string buffer;
 	const size_t BUFSIZE = 128 * 1024;
@@ -87,7 +87,7 @@ static inline std::string zlibDecompress(const char *data, std::size_t size, std
 		throw DecompressError();
 	}
 
-	strm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+	strm.next_in = const_cast<unsigned char *>(data);
 	int ret = 0;
 	do {
 		strm.avail_out = BUFSIZE;
@@ -98,7 +98,7 @@ static inline std::string zlibDecompress(const char *data, std::size_t size, std
 	if (ret != Z_STREAM_END) {
 		throw DecompressError();
 	}
-	*processed = (const char *)strm.next_in - (const char *)data;
+	*processed = strm.next_in - data;
 	(void)inflateEnd(&strm);
 
 	return buffer;
@@ -358,7 +358,7 @@ void TileGenerator::renderMap()
 			const BlockList &blockStack = blocks[xPos];
 			for (BlockList::const_iterator it = blockStack.begin(); it != blockStack.end(); ++it) {
 				const BlockPos &pos = it->first;
-				const char *data = it->second.c_str();
+				const unsigned char *data = it->second.c_str();
 				size_t length = it->second.length();
 
 				uint8_t version = data[0];
@@ -387,7 +387,7 @@ void TileGenerator::renderMap()
 				if (version == 24) {
 					uint8_t ver = data[dataOffset++];
 					if (ver == 1) {
-						int num = readU16(data + dataOffset);
+						uint16_t num = readU16(data + dataOffset);
 						dataOffset += 2;
 						dataOffset += 10 * num;
 					}
@@ -399,7 +399,7 @@ void TileGenerator::renderMap()
 				dataOffset += 2;
 				for (int i = 0; i < staticObjectCount; ++i) {
 					dataOffset += 13;
-					int dataSize = readU16(data + dataOffset);
+					uint16_t dataSize = readU16(data + dataOffset);
 					dataOffset += dataSize + 2;
 				}
 				dataOffset += 4; // Skip timestamp
@@ -409,14 +409,14 @@ void TileGenerator::renderMap()
 				// Read mapping
 				if (version >= 22) {
 					dataOffset++; // mapping version
-					int numMappings = readU16(data + dataOffset);
+					uint16_t numMappings = readU16(data + dataOffset);
 					dataOffset += 2;
 					for (int i = 0; i < numMappings; ++i) {
-						int nodeId = readU16(data + dataOffset);
+						uint16_t nodeId = readU16(data + dataOffset);
 						dataOffset += 2;
-						int nameLen = readU16(data + dataOffset);
+						uint16_t nameLen = readU16(data + dataOffset);
 						dataOffset += 2;
-						string name = string(data + dataOffset, nameLen);
+						string name = string(reinterpret_cast<const char *>(data) + dataOffset, nameLen);
 						if (name == "air") {
 							m_blockAirId = nodeId;
 						}
@@ -433,7 +433,7 @@ void TileGenerator::renderMap()
 				// Node timers
 				if (version >= 25) {
 					dataOffset++;
-					int numTimers = readU16(data + dataOffset);
+					uint16_t numTimers = readU16(data + dataOffset);
 					dataOffset += 2;
 					dataOffset += numTimers * 10;
 				}
@@ -605,10 +605,10 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 		result = sqlite3_step(statement);
 		if(result == SQLITE_ROW) {
 			sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
-			const char *data = reinterpret_cast<const char *>(sqlite3_column_blob(statement, 1));
+			const unsigned char *data = reinterpret_cast<const unsigned char *>(sqlite3_column_blob(statement, 1));
 			int size = sqlite3_column_bytes(statement, 1);
 			BlockPos pos = decodeBlockPos(blocknum);
-			blocks[pos.x].push_back(Block(pos, string(data, size)));
+			blocks[pos.x].push_back(Block(pos, std::basic_string<unsigned char>(data, size)));
 		}
 		else {
 			break;

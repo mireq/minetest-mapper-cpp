@@ -57,12 +57,14 @@ set(mapper_HDRS
 	PixelAttributes.h
 	PlayerAttributes.h
 	TileGenerator.h
+	ZlibDecompressor.h
 )
 
 set(mapper_SRCS
 	PixelAttributes.cpp
 	PlayerAttributes.cpp
 	TileGenerator.cpp
+	ZlibDecompressor.cpp
 	mapper.cpp
 )
 

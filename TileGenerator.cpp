@@ -13,10 +13,10 @@
 #include <gdfontmb.h>
 #include <iostream>
 #include <sstream>
-#include <zlib.h>
 #include "config.h"
 #include "PlayerAttributes.h"
 #include "TileGenerator.h"
+#include "ZlibDecompressor.h"
 #include "colors.h"
 
 using namespace std;
@@ -68,40 +68,6 @@ static inline int readBlockContent(const unsigned char *mapData, int version, in
 	else {
 		throw VersionError();
 	}
-}
-
-static inline std::string zlibDecompress(const unsigned char *data, std::size_t size, std::size_t *processed)
-{
-	string buffer;
-	const size_t BUFSIZE = 128 * 1024;
-	uint8_t temp_buffer[BUFSIZE];
-
-	z_stream strm;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.next_in = Z_NULL;
-	strm.avail_in = size;
-
-	if (inflateInit(&strm) != Z_OK) {
-		throw DecompressError();
-	}
-
-	strm.next_in = const_cast<unsigned char *>(data);
-	int ret = 0;
-	do {
-		strm.avail_out = BUFSIZE;
-		strm.next_out = temp_buffer;
-		ret = inflate(&strm, Z_NO_FLUSH);
-		buffer += string(reinterpret_cast<char *>(temp_buffer), BUFSIZE - strm.avail_out);
-	} while (ret == Z_OK);
-	if (ret != Z_STREAM_END) {
-		throw DecompressError();
-	}
-	*processed = strm.next_in - data;
-	(void)inflateEnd(&strm);
-
-	return buffer;
 }
 
 static inline int colorSafeBounds(int color)
@@ -371,11 +337,12 @@ void TileGenerator::renderMap()
 				else {
 					dataOffset = 2;
 				}
-				size_t processed;
-				string mapData = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
-				dataOffset += processed;
-				string mapMetadata = zlibDecompress(data + dataOffset, length - dataOffset, &processed);
-				dataOffset += processed;
+
+				ZlibDecompressor decompressor(data, length);
+				decompressor.setSeekPos(dataOffset);
+				ZlibDecompressor::string mapData = decompressor.decompress();
+				ZlibDecompressor::string mapMetadata = decompressor.decompress();
+				dataOffset = decompressor.seekPos();
 
 				// Skip unused data
 				if (version <= 21) {
@@ -455,11 +422,11 @@ void TileGenerator::renderMap()
 	}
 }
 
-inline void TileGenerator::renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version)
+inline void TileGenerator::renderMapBlock(const unsigned_string &mapBlock, const BlockPos &pos, int version)
 {
 	int xBegin = (pos.x - m_xMin) * 16;
 	int zBegin = (m_zMax - pos.z) * 16;
-	const unsigned char *mapData = reinterpret_cast<const unsigned char *>(mapBlock.c_str());
+	const unsigned char *mapData = mapBlock.c_str();
 	for (int z = 0; z < 16; ++z) {
 		int imageY = getImageY(zBegin + 15 - z);
 		for (int x = 0; x < 16; ++x) {
@@ -608,7 +575,7 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 			const unsigned char *data = reinterpret_cast<const unsigned char *>(sqlite3_column_blob(statement, 1));
 			int size = sqlite3_column_bytes(statement, 1);
 			BlockPos pos = decodeBlockPos(blocknum);
-			blocks[pos.x].push_back(Block(pos, std::basic_string<unsigned char>(data, size)));
+			blocks[pos.x].push_back(Block(pos, unsigned_string(data, size)));
 		}
 		else {
 			break;

@@ -62,9 +62,6 @@ class DbError {
 class ColorError {
 };
 
-class DecompressError {
-};
-
 class VersionError {
 };
 
@@ -72,8 +69,9 @@ class VersionError {
 class TileGenerator
 {
 private:
+	typedef std::basic_string<unsigned char> unsigned_string;
 	typedef std::map<std::string, Color> ColorMap;
-	typedef std::pair<BlockPos, std::basic_string<unsigned char> > Block;
+	typedef std::pair<BlockPos, unsigned_string> Block;
 	typedef std::list<Block> BlockList;
 
 public:
@@ -98,7 +96,7 @@ private:
 	void renderMap();
 	std::list<int> getZValueList() const;
 	std::map<int, BlockList> getBlocksOnZ(int zPos, sqlite3_stmt *statement) const;
-	void renderMapBlock(const std::string &mapBlock, const BlockPos &pos, int version);
+	void renderMapBlock(const unsigned_string &mapBlock, const BlockPos &pos, int version);
 	void renderShading(int zPos);
 	void renderScale();
 	void renderOrigin();

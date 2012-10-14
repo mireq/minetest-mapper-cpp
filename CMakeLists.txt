@@ -1,10 +1,10 @@
-project(LikesTV_API C CXX)
+project(MinetestMapper C CXX)
 cmake_minimum_required(VERSION 2.6)
 cmake_policy(SET CMP0003 NEW)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS_RELEASE "-O2 -std=c++0x -Wall -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELEASE "-std=c++0x -Wall -DNDEBUG")
 	set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -std=c++0x -Wall -Wextra -DDEBUG")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 

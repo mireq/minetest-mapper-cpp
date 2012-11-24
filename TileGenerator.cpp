@@ -248,9 +248,6 @@ void TileGenerator::loadBlocks()
 			if(result == SQLITE_ROW) {
 				sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
 				BlockPos pos = decodeBlockPos(blocknum);
-				if (pos.x > SectorXMax || pos.x < SectorXMin || pos.z > SectorZMax || pos.z < SectorZMin) {
-					continue;
-				}
 				if (pos.x < m_xMin) {
 					m_xMin = pos.x;
 				}

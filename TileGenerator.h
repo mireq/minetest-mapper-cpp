@@ -133,11 +133,6 @@ private:
 
 	int m_blockAirId;
 	int m_blockIgnoreId;
-
-	static const int SectorXMin = -1500/16;
-	static const int SectorXMax = 1500/16;
-	static const int SectorZMin = -1500/16;
-	static const int SectorZMax = 1500/16;
 }; /* -----  end of class TileGenerator  ----- */
 
 #endif /* end of include guard: TILEGENERATOR_H_JJNUCARH */

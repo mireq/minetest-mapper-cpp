@@ -84,6 +84,7 @@ public:
 	void setDrawOrigin(bool drawOrigin);
 	void setDrawPlayers(bool drawPlayers);
 	void setDrawScale(bool drawScale);
+	void setGeometry(int x, int y, int w, int h);
 	void parseColorsFile(const std::string &fileName);
 	void generate(const std::string &input, const std::string &output);
 
@@ -123,6 +124,10 @@ private:
 	int m_xMax;
 	int m_zMin;
 	int m_zMax;
+	int m_geomX;
+	int m_geomY;
+	int m_geomX2;
+	int m_geomY2;
 	int m_mapWidth;
 	int m_mapHeight;
 	std::list<std::pair<int, int> > m_positions;

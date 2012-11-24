@@ -55,6 +55,9 @@ drawplayers:
 draworigin:
     Draw origin indicator, `--draworigin`
 
+geometry:
+    Limit area to specific geometry, `--geometry -800:-800+1600+1600`
+
 Customization of colors.txt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

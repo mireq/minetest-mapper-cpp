@@ -12,6 +12,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <sstream>
 #include "TileGenerator.h"
 
 using namespace std;
@@ -28,6 +29,7 @@ void usage()
   --drawscale\n\
   --drawplayers\n\
   --draworigin\n\
+  --geometry x:y+w+h\n\
 Color format: '#000000'\n";
 	std::cout << usage_text;
 }
@@ -46,6 +48,7 @@ int main(int argc, char *argv[])
 		{"draworigin", no_argument, 0, 'R'},
 		{"drawplayers", no_argument, 0, 'P'},
 		{"drawscale", no_argument, 0, 'S'},
+		{"geometry", required_argument, 0, 'g'},
 	};
 
 	string input;
@@ -95,6 +98,19 @@ int main(int argc, char *argv[])
 				break;
 			case 'S':
 				generator.setDrawScale(true);
+				break;
+			case 'g': {
+					istringstream geometry;
+					geometry.str(optarg);
+					int x, y, w, h;
+					char c;
+					geometry >> x >> c >> y >> w >> h;
+					if (geometry.fail() || c != ':' || w < 1 || h < 1) {
+						usage();
+						exit(-1);
+					}
+					generator.setGeometry(x, y, w, h);
+				}
 				break;
 			default:
 				abort();

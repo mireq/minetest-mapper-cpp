@@ -97,7 +97,11 @@ TileGenerator::TileGenerator():
 	m_xMin(0),
 	m_xMax(0),
 	m_zMin(0),
-	m_zMax(0)
+	m_zMax(0),
+	m_geomX(-50),
+	m_geomY(-50),
+	m_geomX2(50),
+	m_geomY2(50)
 {
 	string colors_txt_data(reinterpret_cast<char *>(colors_txt), colors_txt_len);
 	istringstream colors_stream(colors_txt_data);
@@ -165,6 +169,38 @@ void TileGenerator::setDrawScale(bool drawScale)
 	m_drawScale = drawScale;
 	if (m_drawScale) {
 		m_border = 40;
+	}
+}
+
+void TileGenerator::setGeometry(int x, int y, int w, int h)
+{
+	if (x > 0) {
+		m_geomX = (x + 15) / 16;
+	}
+	else {
+		m_geomX = (x - 15) / 16;
+	}
+	if (y > 0) {
+		m_geomY = (y + 15) / 16;
+	}
+	else {
+		m_geomY = (y - 15) / 16;
+	}
+
+	int x2 = x + w;
+	int y2 = y + h;
+
+	if (x2 > 0) {
+		m_geomX2 = (x2 + 15) / 16;
+	}
+	else {
+		m_geomX2 = (x2 - 15) / 16;
+	}
+	if (y2 > 0) {
+		m_geomY2 = (y2 + 15) / 16;
+	}
+	else {
+		m_geomY2 = (y2 - 15) / 16;
 	}
 }
 
@@ -248,6 +284,9 @@ void TileGenerator::loadBlocks()
 			if(result == SQLITE_ROW) {
 				sqlite3_int64 blocknum = sqlite3_column_int64(statement, 0);
 				BlockPos pos = decodeBlockPos(blocknum);
+				if (pos.x < m_geomX || pos.x >= m_geomX2 || pos.z < m_geomY || pos.z >= m_geomY2) {
+					continue;
+				}
 				if (pos.x < m_xMin) {
 					m_xMin = pos.x;
 				}

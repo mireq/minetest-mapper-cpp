@@ -13,6 +13,7 @@
 #include <gdfontmb.h>
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
 #include "config.h"
 #include "PlayerAttributes.h"
 #include "TileGenerator.h"
@@ -300,6 +301,9 @@ void TileGenerator::loadBlocks()
 					m_zMax = pos.z;
 				}
 				m_positions.push_back(std::pair<int, int>(pos.x, pos.z));
+			}
+			else if (result == SQLITE_BUSY) {
+				usleep(10000);
 			}
 			else {
 				break;
@@ -612,6 +616,9 @@ std::map<int, TileGenerator::BlockList> TileGenerator::getBlocksOnZ(int zPos, sq
 			int size = sqlite3_column_bytes(statement, 1);
 			BlockPos pos = decodeBlockPos(blocknum);
 			blocks[pos.x].push_back(Block(pos, unsigned_string(data, size)));
+		}
+		else if (result == SQLITE_BUSY) {
+			usleep(10000);
 		}
 		else {
 			break;
